@@ -95,9 +95,11 @@ firewall_setup() {
       esac
     done
 
-    if jq -e '.nodes | to_entries | any(.value.certificate == true)' "$STATE_FILE" >/dev/null 2>&1; then
+    if jq -e '.nodes | to_entries | any((.value.certificate_mode=="acme") or ((.value.certificate_mode==null) and (.value.certificate==true)))' "$STATE_FILE" >/dev/null 2>&1; then
       ufw allow 80/tcp >/dev/null
-      note "已保留 TCP/80 用于 Let's Encrypt 自动续期；平时没有服务监听时不会主动响应。"
+      note "检测到 ACME/旧版 Let's Encrypt 节点，已保留 TCP/80 用于 HTTP-01 续期。"
+    else
+      note "当前没有 ACME HTTP-01 节点，不额外开放 TCP/80。"
     fi
   fi
 
@@ -175,7 +177,7 @@ bbr_status() {
   echo
   echo "活动 TCP 连接中的 BBR 信息（有连接时才会显示）："
   ss -tin 2>/dev/null | grep -A2 -B1 -i 'bbr' | head -n 30 || echo "当前未观察到带 BBR 状态的活动 TCP 连接。"
-  note "Linux TCP BBR 作用于 TCP；Hysteria2/QUIC/UDP 不使用这里的 TCP BBR。"
+  note "Linux TCP BBR 作用于 TCP；Hysteria2/TUIC 的 QUIC/UDP 不使用这里的 TCP BBR。"
 }
 
 enable_bbr() {
@@ -243,16 +245,21 @@ security_audit() {
 
   echo
   headmsg "===== 证书 ====="
-  local key domain cert
-  mapfile -t _certkeys < <(jq -r '.nodes | to_entries[] | select(.value.certificate==true) | .key' "$STATE_FILE")
+  local key domain cert mode tls
+  mapfile -t _certkeys < <(jq -r '.nodes | to_entries[] | select((.value.certificate==true) or (.value.tls_enabled==true)) | .key' "$STATE_FILE")
   if (( ${#_certkeys[@]} == 0 )); then
-    echo "无脚本管理的 TLS 证书节点。"
+    echo "无脚本管理的普通 TLS 证书节点。Reality 不使用普通证书。"
   else
     for key in "${_certkeys[@]}"; do
-      domain=$(jq -r --arg k "$key" '.nodes[$k].domain' "$STATE_FILE")
-      cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
-      echo "${domain}:"
-      openssl x509 -in "$cert" -noout -subject -issuer -dates 2>/dev/null || warn "无法读取证书：$cert"
+      domain=$(jq -r --arg k "$key" '.nodes[$k].domain // empty' "$STATE_FILE")
+      mode=$(jq -r --arg k "$key" '.nodes[$k].certificate_mode // "acme/legacy"' "$STATE_FILE")
+      tls=$(jq -r --arg k "$key" '.nodes[$k].tls_enabled // true' "$STATE_FILE")
+      cert=$(jq -r --arg k "$key" '.nodes[$k].certificate_path // empty' "$STATE_FILE")
+      [[ -z "$cert" && "$mode" == "acme/legacy" && -n "$domain" ]] && cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
+      echo "${key}: TLS=${tls}, mode=${mode}, name=${domain:-无}"
+      if [[ "$tls" == true && -n "$cert" ]]; then
+        openssl x509 -in "$cert" -noout -subject -issuer -dates 2>/dev/null || warn "无法读取证书：$cert"
+      fi
     done
   fi
 
