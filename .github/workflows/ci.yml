@@ -20,10 +20,17 @@ jobs:
         run: |
           bash -n install.sh
           bash -n tests/validate-configs.sh
+          bash -n tests/module-smoke.sh
           for f in lib/*.sh; do bash -n "$f"; done
 
       - name: Install test dependencies
         run: sudo apt-get update && sudo apt-get install -y jq openssl curl ca-certificates
+
+      - name: Module integration smoke test
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/module-smoke.sh
 
       - name: Install current stable sing-box
         run: |
