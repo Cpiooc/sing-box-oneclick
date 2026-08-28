@@ -2,8 +2,8 @@
 
 面向 Debian / Ubuntu VPS 的 sing-box 一键部署与安全管理脚本。首次运行后会安装 `sb` 管理命令，后续直接输入 `sb` 即可管理节点。
 
-> 当前版本：**v1.1.0**  
-> 项目目标：配置尽量自动化，但不以“激进魔改内核/SSH”为代价牺牲 VPS 的可恢复性和稳定性。
+> 当前版本：**v1.2.0**  
+> 项目目标：尽量自动化，同时优先保证配置可验证、可备份、可回滚，不以激进修改内核或 SSH 为代价。
 
 ## 一条命令运行
 
@@ -11,13 +11,13 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/Cpiooc/sing-box-oneclick/main/install.sh)
 ```
 
-安装管理命令后，以后直接运行：
+以后直接：
 
 ```bash
 sb
 ```
 
-如果你更重视供应链安全，建议先下载、检查，再执行：
+更重视供应链安全时，可以先下载检查再执行：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Cpiooc/sing-box-oneclick/main/install.sh -o install.sh
@@ -26,105 +26,163 @@ less install.sh
 sudo bash install.sh
 ```
 
-## 支持的节点模式
+## 支持的节点
 
-| 模式 | 传输 | 推荐端口 | Cloudflare | 适合场景 |
+| 模式 | 传输 | 推荐端口 | Cloudflare | TLS |
 |---|---|---:|---|---|
-| VLESS + Reality + Vision | TCP | 443/TCP | **DNS only 灰云** | 默认主力、直连 VPS |
-| Hysteria2 + TLS + Salamander | QUIC/UDP | 443/UDP | **DNS only 灰云** | 高延迟/丢包网络、UDP 备用 |
-| TUIC v5 + TLS | QUIC/UDP | 8443/UDP | **DNS only 灰云** | 低延迟 QUIC 备用、与 HY2 并存 |
-| VLESS + WebSocket + TLS | TCP/TLS | 443/8443 | **Proxied 橙云** | 需要 Cloudflare CDN/隐藏源站入口 |
-| Reality + Hysteria2 双协议 | TCP + UDP | 443/TCP + 443/UDP | 灰云 | 同时保留两种网络特性 |
+| VLESS + Reality + Vision | TCP | 443/TCP | DNS only 灰云 | Reality，不使用普通证书 |
+| Hysteria2 + Salamander | QUIC/UDP | 443/UDP | DNS only 灰云 | **必需**，ACME / 自签 / 自定义 |
+| TUIC v5 | QUIC/UDP | 8443/UDP | DNS only 灰云 | **必需**，ACME / 自签 / 自定义 |
+| VLESS + WebSocket | TCP | 8443/TCP 或 80/8080 | Proxied 橙云 | 可开 / 可关 |
 
-Reality 的“节点域名”和 Reality SNI 是两个不同概念：节点域名可以是你在 Cloudflare 托管的 `node.example.com`，但 Reality 的 SNI/handshake 域名会单独设置。
-
-Reality、Hysteria2 和 TUIC 都不应直接使用普通 Cloudflare 橙云代理；本脚本把 Cloudflare 橙云专门用于 WebSocket + TLS 模式。
-
-## 推荐的四节点端口布局
+推荐四节点布局：
 
 ```text
 443/TCP   -> VLESS Reality
 443/UDP   -> Hysteria2
-8443/TCP  -> Cloudflare VLESS WS+TLS
+8443/TCP  -> Cloudflare VLESS WS（TLS 开启时）
 8443/UDP  -> TUIC v5
 ```
 
-TCP 和 UDP 是独立的传输协议，因此 `443/TCP` 与 `443/UDP` 可以同时监听；同理 `8443/TCP` 与 `8443/UDP` 也可以同时监听。
+TCP 和 UDP 是不同的监听空间，因此 `443/TCP` 与 `443/UDP` 可以同时存在，`8443/TCP` 与 `8443/UDP` 也可以同时存在。
 
-## 主要功能
+## v1.2：证书 / TLS 管理
 
-- 安装 / 修复 sing-box
-- VLESS + Reality + `xtls-rprx-vision`
-- Hysteria2 + TLS + Salamander obfs
-- TUIC v5 + TLS + QUIC 拥塞控制
-- VLESS WebSocket + TLS + Cloudflare
-- Reality + Hysteria2 双协议部署
-- 节点域名 A/AAAA 与 VPS 公网 IP 检查
-- Reality TLS 1.3 握手目标预检查
-- 自动生成 UUID、Reality 密钥、Short ID、HY2/TUIC 密码和 WS Path
-- 自动生成分享链接与终端二维码
-- Certbot / Let's Encrypt 证书签发与自动续期
-- BBR + `fq` 启用、持久化与多项验证
-- UFW 防火墙配置
-- Cloudflare WS 源站端口可限制为仅允许 Cloudflare 官方 IP 段访问
-- Fail2ban SSH 防护
-- Debian/Ubuntu 自动安全更新（不自动重启 VPS）
-- sing-box 状态、日志、端口、网络与安全自检
-- 修改前备份、候选配置 `sing-box check`、失败自动回滚
-- 配置备份 / 恢复
-- sing-box 安全更新
-- `sb` 自更新
-- 节点卸载 / 完整卸载
+菜单新增：
+
+```text
+26. 切换证书 / TLS 模式
+```
+
+可以直接修改已经部署好的 HY2、TUIC、WS 节点，**不会重新生成 UUID、密码或 WS Path**。切换前仍执行候选配置检查、备份和失败回滚。
+
+### 证书模式
+
+部署 HY2、TUIC 或开启 TLS 的 WS 时，可选择：
+
+```text
+1. ACME 域名证书（Let's Encrypt，推荐）
+2. 自签证书
+3. 导入现有 PEM 证书 + 私钥
+```
+
+对于 VLESS WebSocket 还额外支持：
+
+```text
+4. 关闭 TLS
+```
+
+### ACME / Let's Encrypt
+
+- 使用 Certbot 获取公网受信任证书。
+- 自动启用 Certbot timer。
+- 续期后自动重启 sing-box。
+- HTTP-01 通常需要 VPS 和云厂商安全组允许 TCP/80。
+- ACME 证书要求域名，不能直接给普通 VPS IP 使用本脚本的 HTTP-01 模式签发。
+- 客户端正常校验证书，不需要 `insecure`。
+
+本项目当前继续使用 Certbot，而不是强依赖 sing-box 原生 ACME provider，这样不会依赖 sing-box 二进制是否包含 `with_acme` 构建标签。
+
+### 自签证书
+
+- 不要求公网 CA 验证。
+- 节点地址可以使用域名或 IP。
+- 自动生成 RSA-2048、SHA-256、自带 SAN 的证书。
+- 默认有效期 10 年。
+- 私钥权限为 `600`。
+- 客户端必须允许不安全/跳过证书验证。
+
+自签证书适合测试、临时节点、没有可用域名的场景；长期公网使用仍推荐 ACME 公网证书。
+
+### 导入已有证书
+
+可以输入现有：
+
+```text
+certificate.pem / fullchain.pem
+private-key.pem
+```
+
+脚本会检查：
+
+- 证书是否为有效 X.509 PEM；
+- 私钥是否可读取；
+- 证书公钥与私钥是否匹配；
+- 然后复制到脚本自己的受控目录。
+
+如果该证书不受客户端信任，可以选择让生成的客户端参数包含跳过验证提示。
+
+## TLS 开关规则
+
+不是所有协议都能关闭 TLS。
+
+| 节点 | TLS 能否关闭 | 原因 |
+|---|---|---|
+| Reality | 不适用 | 使用 Reality TLS/握手机制，不是普通证书 TLS |
+| Hysteria2 | **不能** | QUIC/HY2 服务端需要 TLS |
+| TUIC v5 | **不能** | TUIC 服务端 `tls` 为必需配置 |
+| VLESS WebSocket | **可以** | VLESS WS 本身可以不带 TLS |
+
+因此菜单不会提供“关闭 HY2/TUIC TLS”这种无效配置。
+
+### Cloudflare WS 开启 TLS
+
+支持的 Cloudflare HTTPS 端口：
+
+```text
+443 2053 2083 2087 2096 8443
+```
+
+推荐：
+
+```text
+VLESS WS + TLS
+TCP/8443
+Cloudflare Proxied 橙云
+```
+
+公网受信任证书时，Cloudflare SSL/TLS 推荐使用 `Full (strict)`。
+
+如果源站使用自签证书，Cloudflare 可以使用 `Full`，但它不会像 `Full (strict)` 那样严格验证源站证书，因此安全性较低。
+
+### Cloudflare WS 关闭 TLS
+
+关闭 TLS 后脚本会要求使用 Cloudflare 支持的 HTTP 端口：
+
+```text
+80 8080 8880 2052 2082 2086 2095
+```
+
+如果从 TLS 模式切换到无 TLS，而旧端口是 `8443`，菜单会要求选择新的 HTTP 端口；反过来从无 TLS 切回 TLS 也会自动检查 HTTPS 端口。
+
+> 不建议把无 TLS WS 作为主力节点。它主要用于测试或特殊 Cloudflare 入口需求。
 
 ## TUIC v5
 
-运行：
-
 ```text
-sb -> 6
-```
-
-脚本默认：
-
-```text
-协议              TUIC v5
 传输              QUIC / UDP
-端口              8443/UDP
-TLS               Let's Encrypt 真证书
+默认端口          8443/UDP
+TLS               必需
 ALPN              h3
-QUIC 拥塞控制      bbr
+QUIC 拥塞控制      bbr（也可 cubic / new_reno）
 0-RTT              关闭
 Heartbeat          10s
 ```
 
-TUIC 可选拥塞控制：
-
-```text
-bbr
-cubic
-new_reno
-```
-
-这里的 TUIC `bbr` 是 QUIC/TUIC 自身的拥塞控制，不等同于 Linux 内核的 TCP BBR。菜单里的“启用 TCP BBR + fq”主要影响 Reality、WS 等 TCP 流量，不是 TUIC/HY2 的 QUIC 拥塞控制。
-
-为降低 0-RTT 带来的重放风险，本项目默认固定 `zero_rtt_handshake=false`。
-
-TUIC 和 HY2 都使用 UDP，因此它们不能同时监听同一个 `IP + UDP端口`。本项目默认把 HY2 放在 `443/UDP`，TUIC 放在 `8443/UDP`，从而可以同时运行。
-
-TUIC 需要有效 TLS 证书，因此域名必须直接解析到 VPS，推荐 Cloudflare 使用 **DNS only（灰云）**。云厂商安全组需放行 TUIC 的 UDP 端口，并放行 TCP/80 供 Let's Encrypt HTTP-01 首次签发与后续续期。
+TUIC 的 `bbr` 是 QUIC/TUIC 自身的拥塞控制，不等于 Linux 内核 TCP BBR。为降低重放攻击风险，脚本固定 `zero_rtt_handshake=false`。
 
 ## 菜单
 
 ```text
-1.  安装 / 修复 sing-box
-2.  部署 / 重建 VLESS Reality
-3.  部署 / 重建 Hysteria2
-4.  Reality + Hysteria2 双协议
-5.  部署 / 重建 Cloudflare VLESS WS+TLS
-6.  部署 / 重建 TUIC v5
-7.  查看节点与分享链接
-8.  显示节点二维码
-9.  删除节点
+ 1. 安装 / 修复 sing-box
+ 2. 部署 / 重建 VLESS Reality
+ 3. 部署 / 重建 Hysteria2
+ 4. Reality + Hysteria2 双协议
+ 5. 部署 / 重建 Cloudflare VLESS WS
+ 6. 部署 / 重建 TUIC v5
+ 7. 查看节点与分享链接
+ 8. 显示节点二维码
+ 9. 删除节点
 10. sing-box 状态 / 配置检查
 11. 查看日志
 12. 网络诊断
@@ -136,97 +194,64 @@ TUIC 需要有效 TLS 证书，因此域名必须直接解析到 VPS，推荐 Cl
 18. 完整安全自检
 19. 备份配置
 20. 恢复配置
-21. 查看证书
-22. 手动续期证书
+21. 查看 TLS 证书状态
+22. 手动续期 ACME 证书
 23. 安全更新 sing-box
 24. 更新本脚本
 25. 卸载
-0.  退出
+26. 切换证书 / TLS 模式
+ 0. 退出
 ```
 
-## 推荐部署方式
+## Reality
 
-### A. Reality 主力节点
-
-在 Cloudflare DNS 中创建：
+Reality 节点域名和 Reality SNI 是两个不同概念：
 
 ```text
-A     node.example.com     VPS_IPV4     DNS only
-AAAA  node.example.com     VPS_IPV6     DNS only   # VPS 有 IPv6 时可选
+节点地址：node.example.com
+Reality SNI：www.microsoft.com
 ```
 
-然后运行 `sb` -> **2**。Reality SNI 建议使用一个从 VPS 可正常完成 TLS 1.3 握手的独立网站域名，不要把它与节点域名混为一谈。
+Reality 推荐 DNS only 灰云直连 VPS。普通 Cloudflare 橙云不是任意 TCP 代理。
 
-### B. Reality + Hysteria2
+## Hysteria2 / TUIC
 
-运行 `sb` -> **4**。两者可以同时使用数字端口 443，因为 Reality 使用 TCP，而 HY2 使用 UDP：
+HY2 和 TUIC 使用 UDP/QUIC，普通 Cloudflare 橙云不用于这两种节点。建议：
 
 ```text
-443/TCP -> VLESS Reality
-443/UDP -> Hysteria2
+HY2   -> 443/UDP
+TUIC  -> 8443/UDP
 ```
 
-HY2 需要真实 TLS 证书，因此域名必须正确解析到 VPS，云厂商安全组还需要放行 TCP/80 供 Let's Encrypt HTTP-01 初次验证与后续续期。
+如果选择 ACME 证书，使用正确解析到 VPS 的域名，并确保 TCP/80 可用于 HTTP-01。选择自签证书时，可以直接使用 VPS IP，但客户端需要跳过证书验证。
 
-### C. TUIC v5
+## BBR
 
-运行 `sb` -> **6**。推荐直接接受默认 `8443/UDP`。如果已经存在 HY2 `443/UDP`，TUIC 仍可同时运行。
-
-```text
-443/UDP  -> Hysteria2
-8443/UDP -> TUIC v5
-```
-
-建议为 TUIC 使用 DNS only 灰云域名，并在云厂商安全组放行 UDP/8443。
-
-### D. Cloudflare 橙云 WS+TLS
-
-1. 先让域名解析到 VPS；首次签发证书时推荐暂时使用 **DNS only 灰云**。
-2. 云厂商安全组放行 TCP/80，以及你选择的 Cloudflare HTTPS 端口。
-3. 运行 `sb` -> **5** 完成证书和 WS+TLS 节点部署。
-4. 证书成功后，在 Cloudflare 开启 **Proxied 橙云**。
-5. Cloudflare SSL/TLS 模式使用 **Full (strict)**，WebSockets 保持开启。
-6. 再运行 `sb` -> **15**，可选择只允许 Cloudflare 官方 IP 访问 WS 源站端口。
-
-脚本允许的 Cloudflare HTTPS 端口：`443 / 2053 / 2083 / 2087 / 2096 / 8443`。如果 443/TCP 已被 Reality 使用，会默认建议 8443/TCP。
-
-## TCP BBR
-
-菜单 **13** 会尝试启用：
+菜单 **13** 尝试设置：
 
 ```text
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 ```
 
-随后检查：
+脚本不会为了 BBR 自动替换内核。如果宿主机或容器不支持，只提示而不做高风险内核修改。
 
-- 内核是否报告 `bbr` 可用
-- 当前 TCP congestion control 是否为 `bbr`
-- 默认 qdisc 是否为 `fq`
-- `tcp_bbr` 是否加载/内建
-- 活动 TCP 连接是否能观察到 BBR 信息
+Linux TCP BBR 主要影响 TCP 流量；HY2/TUIC 使用 QUIC/UDP，不依赖 Linux TCP BBR。
 
-脚本**不会为了 BBR 自动替换 VPS 内核**。如果宿主机/容器不支持 BBR，只会提示，不做高风险内核修改。
+## 防火墙和 SSH
 
-Linux TCP BBR 作用于 TCP；Hysteria2 和 TUIC 使用 QUIC/UDP，不依赖这里的 TCP BBR。
+UFW 启用前会检测 SSH 端口。脚本不会默认：
 
-## 防火墙和 SSH 安全
+- 禁用 SSH 密码登录；
+- 禁用 root SSH；
+- 自动换 SSH 端口；
+- 自动重启 VPS。
 
-UFW 启用前，脚本会先尝试识别实际 SSH 端口，并提醒确认 VPS 厂商安全组。它不会默认做以下高风险操作：
-
-- 禁用 SSH 密码登录
-- 禁用 root SSH 登录
-- 自动修改 SSH 端口
-- 自动重启 VPS
-
-原因是这些操作如果判断错误，会直接把管理员锁在服务器外。需要更严格 SSH 加固时，应先确认密钥登录和云控制台/救援模式可用，再单独处理。
-
-本脚本只能管理 VPS **系统内部**的 UFW；AWS / GCP / Oracle Cloud / 其他 VPS 厂商的 Security Group/云防火墙仍需你自己放行对应端口。
+云厂商 Security Group / 云防火墙仍需自行放行相应 TCP/UDP 端口。
 
 ## 安全与回滚
 
-部署节点不是直接覆盖生产配置。流程是：
+配置变更流程：
 
 ```text
 生成候选配置
@@ -235,84 +260,51 @@ sing-box check
       ↓
 备份当前配置 + 状态
       ↓
-原子替换配置
+替换配置
       ↓
 重启并检查 systemd active
       ↓
-失败则尝试自动回滚
+失败 -> 自动尝试回滚
 ```
 
-本地敏感文件默认使用严格权限：
+敏感文件：
 
 ```text
 /etc/sing-box/config.json
 /etc/sing-box-oneclick/state.json
+/etc/sing-box-oneclick/certs/
 /root/sing-box-node-info.txt
 ```
 
-请不要把这些生产文件上传到公开 GitHub 仓库。
-
-## 证书
-
-Hysteria2、TUIC 和 Cloudflare WS+TLS 使用 Certbot / Let's Encrypt。脚本会启用 Certbot timer，并安装续期后重启 sing-box 的 deploy hook。
-
-如果 TCP/80 已被其他 Web 服务占用，脚本不会擅自停止该服务，而是终止自动签发并提示你处理，避免破坏现有网站。
+不要把这些生产文件上传到公开仓库。
 
 ## 更新
 
-更新脚本：
-
-```bash
-sb
-# 选择 24
+```text
+sb -> 24   # 更新管理脚本
+sb -> 23   # 更新 sing-box
 ```
 
-更新 sing-box：
+从 v1.1 升级到 v1.2 后，已有节点仍保留；若要把旧 HY2/TUIC/WS 迁移到新的证书模式，运行：
 
-```bash
-sb
-# 选择 23
+```text
+sb -> 26
 ```
-
-更新 sing-box 前会先备份现有配置和二进制；新版本如果无法通过现有配置检查，会尝试恢复旧二进制。
-
-## 兼容性
-
-当前目标：
-
-- Debian 11 / 12 / 13
-- Ubuntu 22.04 / 24.04 及相近 systemd 环境
-- amd64 / arm64 等官方 sing-box 安装脚本支持的 Linux 架构
-- root 权限
-
-容器型 VPS（例如受限 OpenVZ/LXC）可能无法修改 BBR/sysctl；脚本会尽量检测并给出提示。
 
 ## 自动测试
 
-仓库包含 GitHub Actions。每次更新 `main` 时会：
+GitHub Actions 每次更新 `main` 时会：
 
-1. 检查 Bash 语法；
-2. 安装当前 sing-box 官方稳定版；
-3. 对 Reality、Hysteria2、TUIC v5、VLESS WS+TLS 四种代表性服务端配置执行 `sing-box check`。
+1. 对主脚本和所有 `lib/*.sh` 执行 Bash 语法检查；
+2. 安装当前官方稳定版 sing-box；
+3. 对 Reality、Hysteria2、TUIC、VLESS WS+TLS、VLESS WS 无 TLS 的代表性配置执行 `sing-box check`。
 
-## 从旧版本升级
+## 兼容性
 
-v1.1 会尽量保留已有 `/etc/sing-box/config.json`，只管理带以下 tag 的入站：
-
-```text
-vless-reality-in
-hysteria2-in
-vless-ws-tls-in
-tuic-in
-```
-
-已有 v1.0 用户直接运行：
-
-```text
-sb -> 24
-```
-
-即可更新管理脚本并获得 TUIC 功能。
+- Debian 11 / 12 / 13
+- Ubuntu 22.04 / 24.04 及相近 systemd 环境
+- 官方 sing-box 安装脚本支持的 amd64 / arm64 等 Linux 架构
+- root 权限
 
 ## 免责声明
 
