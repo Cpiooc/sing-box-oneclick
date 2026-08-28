@@ -57,7 +57,7 @@ ui_status_dot() {
   local state=${1:-unknown}
   case "$state" in
     active|yes|enabled|ok|true) echo -e "${C_GREEN}●${C_RESET}" ;;
-    inactive|no|disabled|false|none) echo -e "${C_YELLOW}●${C_RESET}" ;;
+    inactive|no|disabled|false|none|installed) echo -e "${C_YELLOW}●${C_RESET}" ;;
     *) echo -e "${C_RED}●${C_RESET}" ;;
   esac
 }
@@ -69,7 +69,7 @@ ui_dashboard() {
   if have sing-box; then
     sb_state=$(systemctl is-active sing-box 2>/dev/null || true)
     [[ -n "$sb_state" ]] || sb_state="installed"
-    [[ "$sb_state" == "active" ]] && sb_dot="active"
+    sb_dot="$sb_state"
     sb_ver=$(sing-box version 2>/dev/null | head -n1 | sed 's/^sing-box version //' || true)
     [[ -n "$sb_ver" ]] || sb_ver="unknown"
   fi
@@ -115,7 +115,7 @@ ui_node_overview() {
       ((.value.address // "-") | tostring),
       ((.value.port // "-") | tostring),
       ((.value.firewall // "-") | ascii_upcase),
-      (.value.tls_mode // (if .value.certificate == true then "TLS" else "-" end))
+      (.value.certificate_mode // (if .value.tls_enabled == false then "TLS off" elif .value.certificate == true then "TLS" else "-" end))
     ] | @tsv
   ' "$STATE_FILE" 2>/dev/null | while IFS=$'\t' read -r name type addr port proto tls; do
     echo -e "  ${C_GREEN}●${C_RESET} ${C_BOLD}${name}${C_RESET}"
