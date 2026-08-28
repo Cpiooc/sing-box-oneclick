@@ -36,6 +36,8 @@ modules=(
   tls-manager.sh
   tls-safe.sh
   runtime.sh
+  editor.sh
+  client-export.sh
   views.sh
   menu.sh
 )
@@ -49,6 +51,9 @@ required=(
   main menu ui_banner ui_dashboard ui_node_overview ui_cli_help
   deploy_reality deploy_hysteria2 deploy_tuic deploy_cloudflare_ws
   switch_certificate_tls select_certificate_mode
+  edit_node_parameters edit_node_port rebuild_node_uri
+  client_export_menu export_singbox_client export_mihomo_client export_v2rayn_subscription
+  generate_all_client_exports refresh_client_exports_if_present
   apply_candidate apply_runtime_change singbox_can_reload
   show_status show_nodes show_qr_codes show_logs network_diagnostics
   bbr_status certificate_status security_audit
@@ -65,6 +70,8 @@ done
 [[ "$(type -t apply_candidate)" == "function" ]]
 [[ "$(type -t show_status)" == "function" ]]
 [[ "$(type -t bbr_status)" == "function" ]]
+[[ "$(type -t edit_node_parameters)" == "function" ]]
+[[ "$(type -t generate_all_client_exports)" == "function" ]]
 
 rm -rf "$APP_DIR"
 echo "All modules loaded and required functions are present."
