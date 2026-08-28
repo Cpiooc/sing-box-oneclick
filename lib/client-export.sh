@@ -50,7 +50,7 @@ singbox_outbound_for_key() {
       sid=$(jq -r '.nodes.reality.short_id' "$STATE_FILE")
       jq -n --arg tag "$tag" --arg server "$address" --argjson port "$port" \
         --arg uuid "$uuid" --arg sni "$domain" --arg pub "$pub" --arg sid "$sid" \
-        '{type:"vless",tag:$tag,server:$server,server_port:$port,uuid:$uuid,flow:"xtls-rprx-vision",tls:{enabled:true,server_name:$sni,reality:{enabled:true,public_key:$pub,short_id:$sid}}}'
+        '{type:"vless",tag:$tag,server:$server,server_port:$port,uuid:$uuid,flow:"xtls-rprx-vision",tls:{enabled:true,server_name:$sni,utls:{enabled:true,fingerprint:"chrome"},reality:{enabled:true,public_key:$pub,short_id:$sid}}}'
       ;;
     hy2)
       domain=$(jq -r '.nodes.hy2.domain // .nodes.hy2.address' "$STATE_FILE")
