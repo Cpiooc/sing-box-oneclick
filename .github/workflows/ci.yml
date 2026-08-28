@@ -1,0 +1,36 @@
+name: Validate installer
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bash syntax
+        run: |
+          bash -n install.sh
+          bash -n tests/validate-configs.sh
+          for f in lib/*.sh; do bash -n "$f"; done
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq openssl curl ca-certificates
+
+      - name: Install current stable sing-box
+        run: |
+          curl -fsSL --proto '=https' --tlsv1.2 https://sing-box.app/install.sh -o /tmp/install-sing-box.sh
+          bash -n /tmp/install-sing-box.sh
+          sudo bash /tmp/install-sing-box.sh
+          sing-box version
+
+      - name: Validate representative configs
+        run: bash tests/validate-configs.sh
