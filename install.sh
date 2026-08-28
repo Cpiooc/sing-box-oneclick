@@ -38,6 +38,7 @@ MODULES=(
   "lib/tls-manager.sh"
   "lib/tls-safe.sh"
   "lib/runtime.sh"
+  "lib/views.sh"
   "lib/menu.sh"
 )
 
