@@ -10,7 +10,7 @@ trap 'rm -rf "$work"' EXIT
 
 openssl req -x509 -newkey rsa:2048 -nodes -days 2 \
   -keyout "$work/key.pem" -out "$work/cert.pem" \
-  -subj '/CN=example.com' >/dev/null 2>&1
+  -subj '/CN=example.com' -addext 'subjectAltName=DNS:example.com' >/dev/null 2>&1
 
 uuid=$(sing-box generate uuid)
 short_id=$(sing-box generate rand --hex 8)
@@ -31,6 +31,11 @@ jq -n \
   --arg uuid "$uuid" --arg cert "$work/cert.pem" --arg key "$work/key.pem" \
   '{log:{level:"error"},inbounds:[{type:"vless",tag:"vless-ws-tls-in",listen:"::",listen_port:24445,users:[{name:"main",uuid:$uuid}],tls:{enabled:true,server_name:"example.com",certificate_path:$cert,key_path:$key},transport:{type:"ws",path:"/ci-test"}}],outbounds:[{type:"direct",tag:"direct"}]}' \
   > "$work/ws-tls.json"
+
+jq -n \
+  --arg uuid "$uuid" \
+  '{log:{level:"error"},inbounds:[{type:"vless",tag:"vless-ws-plain-in",listen:"::",listen_port:24447,users:[{name:"main",uuid:$uuid}],transport:{type:"ws",path:"/ci-test-plain"}}],outbounds:[{type:"direct",tag:"direct"}]}' \
+  > "$work/ws-no-tls.json"
 
 jq -n \
   --arg uuid "$uuid" --arg cert "$work/cert.pem" --arg key "$work/key.pem" \
