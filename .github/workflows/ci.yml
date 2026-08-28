@@ -22,6 +22,7 @@ jobs:
           bash -n tests/validate-configs.sh
           bash -n tests/module-smoke.sh
           bash -n tests/client-export.sh
+          bash -n tests/editor-patch.sh
           for f in lib/*.sh; do bash -n "$f"; done
 
       - name: Install test dependencies
@@ -42,6 +43,12 @@ jobs:
 
       - name: Validate representative server configs
         run: bash tests/validate-configs.sh
+
+      - name: Validate in-place parameter editing
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/editor-patch.sh
 
       - name: Validate generated client configs
         env:
