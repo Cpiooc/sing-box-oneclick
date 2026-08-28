@@ -33,6 +33,8 @@ menu() {
     ui_item 8  "显示节点二维码"
     ui_item 9  "删除单个节点"
     ui_item 26 "切换证书 / TLS 模式"
+    ui_item 27 "原地修改节点参数"
+    ui_item 28 "客户端配置 / 订阅导出"
 
     ui_group "运行与诊断"
     ui_item 10 "sing-box 状态 / 配置校验"
@@ -60,7 +62,7 @@ menu() {
 
     echo
     ui_rule
-    echo -e "  ${C_DIM}快捷命令：sb status · sb nodes · sb qr · sb logs · sb audit · sb cert${C_RESET}"
+    echo -e "  ${C_DIM}快捷命令：sb status · sb nodes · sb edit · sb export · sb qr · sb logs · sb audit · sb cert${C_RESET}"
     echo -e "  ${C_CYAN} 0${C_RESET}  退出"
     echo
     read -r -p "  请选择操作 › " choice
@@ -92,6 +94,8 @@ menu() {
       24) self_update; pause ;;
       25) uninstall_all ;;
       26) switch_certificate_tls; pause ;;
+      27) edit_node_parameters; pause ;;
+      28) client_export_menu; pause ;;
       0) exit 0 ;;
       *) warn "无效选择：${choice:-空}"; sleep 1 ;;
     esac
@@ -115,6 +119,8 @@ main() {
     menu|"") menu ;;
     status) show_status ;;
     nodes|info) ui_node_overview; echo; show_nodes ;;
+    edit|modify) edit_node_parameters ;;
+    export|client|subscription|sub) client_export_menu ;;
     qr) show_qr_codes ;;
     logs|log) show_logs ;;
     audit|check) security_audit ;;
