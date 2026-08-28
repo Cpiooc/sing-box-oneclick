@@ -32,6 +32,11 @@ jq -n \
   '{log:{level:"error"},inbounds:[{type:"vless",tag:"vless-ws-tls-in",listen:"::",listen_port:24445,users:[{name:"main",uuid:$uuid}],tls:{enabled:true,server_name:"example.com",certificate_path:$cert,key_path:$key},transport:{type:"ws",path:"/ci-test"}}],outbounds:[{type:"direct",tag:"direct"}]}' \
   > "$work/ws-tls.json"
 
+jq -n \
+  --arg uuid "$uuid" --arg cert "$work/cert.pem" --arg key "$work/key.pem" \
+  '{log:{level:"error"},inbounds:[{type:"tuic",tag:"tuic-in",listen:"::",listen_port:24446,users:[{name:"main",uuid:$uuid,password:"test-tuic-password"}],congestion_control:"bbr",auth_timeout:"3s",zero_rtt_handshake:false,heartbeat:"10s",tls:{enabled:true,server_name:"example.com",alpn:["h3"],certificate_path:$cert,key_path:$key}}],outbounds:[{type:"direct",tag:"direct"}]}' \
+  > "$work/tuic.json"
+
 for config in "$work"/*.json; do
   echo "==> sing-box check: $(basename "$config")"
   sing-box check -c "$config"
