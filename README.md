@@ -2,7 +2,7 @@
 
 面向 Debian / Ubuntu VPS 的 sing-box 一键部署与安全管理脚本。首次运行后会安装 `sb` 管理命令，后续直接输入 `sb` 即可管理节点。
 
-> 当前版本：**v1.0.0**  
+> 当前版本：**v1.1.0**  
 > 项目目标：配置尽量自动化，但不以“激进魔改内核/SSH”为代价牺牲 VPS 的可恢复性和稳定性。
 
 ## 一条命令运行
@@ -32,23 +32,36 @@ sudo bash install.sh
 |---|---|---:|---|---|
 | VLESS + Reality + Vision | TCP | 443/TCP | **DNS only 灰云** | 默认主力、直连 VPS |
 | Hysteria2 + TLS + Salamander | QUIC/UDP | 443/UDP | **DNS only 灰云** | 高延迟/丢包网络、UDP 备用 |
+| TUIC v5 + TLS | QUIC/UDP | 8443/UDP | **DNS only 灰云** | 低延迟 QUIC 备用、与 HY2 并存 |
 | VLESS + WebSocket + TLS | TCP/TLS | 443/8443 | **Proxied 橙云** | 需要 Cloudflare CDN/隐藏源站入口 |
 | Reality + Hysteria2 双协议 | TCP + UDP | 443/TCP + 443/UDP | 灰云 | 同时保留两种网络特性 |
 
 Reality 的“节点域名”和 Reality SNI 是两个不同概念：节点域名可以是你在 Cloudflare 托管的 `node.example.com`，但 Reality 的 SNI/handshake 域名会单独设置。
 
-普通 Cloudflare 橙云不能直接代理 Reality 的任意 TCP 或 Hysteria2 的 UDP/QUIC；本脚本因此把 Cloudflare 橙云专门用于 WebSocket + TLS 模式。
+Reality、Hysteria2 和 TUIC 都不应直接使用普通 Cloudflare 橙云代理；本脚本把 Cloudflare 橙云专门用于 WebSocket + TLS 模式。
+
+## 推荐的四节点端口布局
+
+```text
+443/TCP   -> VLESS Reality
+443/UDP   -> Hysteria2
+8443/TCP  -> Cloudflare VLESS WS+TLS
+8443/UDP  -> TUIC v5
+```
+
+TCP 和 UDP 是独立的传输协议，因此 `443/TCP` 与 `443/UDP` 可以同时监听；同理 `8443/TCP` 与 `8443/UDP` 也可以同时监听。
 
 ## 主要功能
 
 - 安装 / 修复 sing-box
 - VLESS + Reality + `xtls-rprx-vision`
 - Hysteria2 + TLS + Salamander obfs
+- TUIC v5 + TLS + QUIC 拥塞控制
 - VLESS WebSocket + TLS + Cloudflare
 - Reality + Hysteria2 双协议部署
 - 节点域名 A/AAAA 与 VPS 公网 IP 检查
 - Reality TLS 1.3 握手目标预检查
-- 自动生成 UUID、Reality 密钥、Short ID、HY2 密码和 WS Path
+- 自动生成 UUID、Reality 密钥、Short ID、HY2/TUIC 密码和 WS Path
 - 自动生成分享链接与终端二维码
 - Certbot / Let's Encrypt 证书签发与自动续期
 - BBR + `fq` 启用、持久化与多项验证
@@ -63,6 +76,43 @@ Reality 的“节点域名”和 Reality SNI 是两个不同概念：节点域�
 - `sb` 自更新
 - 节点卸载 / 完整卸载
 
+## TUIC v5
+
+运行：
+
+```text
+sb -> 6
+```
+
+脚本默认：
+
+```text
+协议              TUIC v5
+传输              QUIC / UDP
+端口              8443/UDP
+TLS               Let's Encrypt 真证书
+ALPN              h3
+QUIC 拥塞控制      bbr
+0-RTT              关闭
+Heartbeat          10s
+```
+
+TUIC 可选拥塞控制：
+
+```text
+bbr
+cubic
+new_reno
+```
+
+这里的 TUIC `bbr` 是 QUIC/TUIC 自身的拥塞控制，不等同于 Linux 内核的 TCP BBR。菜单里的“启用 TCP BBR + fq”主要影响 Reality、WS 等 TCP 流量，不是 TUIC/HY2 的 QUIC 拥塞控制。
+
+为降低 0-RTT 带来的重放风险，本项目默认固定 `zero_rtt_handshake=false`。
+
+TUIC 和 HY2 都使用 UDP，因此它们不能同时监听同一个 `IP + UDP端口`。本项目默认把 HY2 放在 `443/UDP`，TUIC 放在 `8443/UDP`，从而可以同时运行。
+
+TUIC 需要有效 TLS 证书，因此域名必须直接解析到 VPS，推荐 Cloudflare 使用 **DNS only（灰云）**。云厂商安全组需放行 TUIC 的 UDP 端口，并放行 TCP/80 供 Let's Encrypt HTTP-01 首次签发与后续续期。
+
 ## 菜单
 
 ```text
@@ -71,25 +121,26 @@ Reality 的“节点域名”和 Reality SNI 是两个不同概念：节点域�
 3.  部署 / 重建 Hysteria2
 4.  Reality + Hysteria2 双协议
 5.  部署 / 重建 Cloudflare VLESS WS+TLS
-6.  查看节点与分享链接
-7.  显示节点二维码
-8.  删除节点
-9.  sing-box 状态 / 配置检查
-10. 查看日志
-11. 网络诊断
-12. 启用 BBR + fq
-13. 验证 BBR
-14. 配置 UFW 防火墙
-15. 配置 Fail2ban
-16. 启用自动安全更新
-17. 完整安全自检
-18. 备份配置
-19. 恢复配置
-20. 查看证书
-21. 手动续期证书
-22. 安全更新 sing-box
-23. 更新本脚本
-24. 卸载
+6.  部署 / 重建 TUIC v5
+7.  查看节点与分享链接
+8.  显示节点二维码
+9.  删除节点
+10. sing-box 状态 / 配置检查
+11. 查看日志
+12. 网络诊断
+13. 启用 TCP BBR + fq
+14. 验证 TCP BBR
+15. 配置 UFW 防火墙
+16. 配置 Fail2ban
+17. 启用自动安全更新
+18. 完整安全自检
+19. 备份配置
+20. 恢复配置
+21. 查看证书
+22. 手动续期证书
+23. 安全更新 sing-box
+24. 更新本脚本
+25. 卸载
 0.  退出
 ```
 
@@ -117,20 +168,31 @@ AAAA  node.example.com     VPS_IPV6     DNS only   # VPS 有 IPv6 时可选
 
 HY2 需要真实 TLS 证书，因此域名必须正确解析到 VPS，云厂商安全组还需要放行 TCP/80 供 Let's Encrypt HTTP-01 初次验证与后续续期。
 
-### C. Cloudflare 橙云 WS+TLS
+### C. TUIC v5
+
+运行 `sb` -> **6**。推荐直接接受默认 `8443/UDP`。如果已经存在 HY2 `443/UDP`，TUIC 仍可同时运行。
+
+```text
+443/UDP  -> Hysteria2
+8443/UDP -> TUIC v5
+```
+
+建议为 TUIC 使用 DNS only 灰云域名，并在云厂商安全组放行 UDP/8443。
+
+### D. Cloudflare 橙云 WS+TLS
 
 1. 先让域名解析到 VPS；首次签发证书时推荐暂时使用 **DNS only 灰云**。
 2. 云厂商安全组放行 TCP/80，以及你选择的 Cloudflare HTTPS 端口。
 3. 运行 `sb` -> **5** 完成证书和 WS+TLS 节点部署。
 4. 证书成功后，在 Cloudflare 开启 **Proxied 橙云**。
 5. Cloudflare SSL/TLS 模式使用 **Full (strict)**，WebSockets 保持开启。
-6. 再运行 `sb` -> **14**，可选择只允许 Cloudflare 官方 IP 访问 WS 源站端口。
+6. 再运行 `sb` -> **15**，可选择只允许 Cloudflare 官方 IP 访问 WS 源站端口。
 
-脚本允许的 Cloudflare HTTPS 端口：`443 / 2053 / 2083 / 2087 / 2096 / 8443`。如果 443/TCP 已被 Reality 使用，会默认建议 8443。
+脚本允许的 Cloudflare HTTPS 端口：`443 / 2053 / 2083 / 2087 / 2096 / 8443`。如果 443/TCP 已被 Reality 使用，会默认建议 8443/TCP。
 
-## BBR
+## TCP BBR
 
-菜单 **12** 会尝试启用：
+菜单 **13** 会尝试启用：
 
 ```text
 net.core.default_qdisc = fq
@@ -147,7 +209,7 @@ net.ipv4.tcp_congestion_control = bbr
 
 脚本**不会为了 BBR 自动替换 VPS 内核**。如果宿主机/容器不支持 BBR，只会提示，不做高风险内核修改。
 
-BBR 是 Linux TCP 拥塞控制算法；Hysteria2 使用 QUIC/UDP，不依赖这里的 TCP BBR。
+Linux TCP BBR 作用于 TCP；Hysteria2 和 TUIC 使用 QUIC/UDP，不依赖这里的 TCP BBR。
 
 ## 防火墙和 SSH 安全
 
@@ -192,7 +254,7 @@ sing-box check
 
 ## 证书
 
-Hysteria2 和 Cloudflare WS+TLS 使用 Certbot / Let's Encrypt。脚本会启用 Certbot timer，并安装续期后重启 sing-box 的 deploy hook。
+Hysteria2、TUIC 和 Cloudflare WS+TLS 使用 Certbot / Let's Encrypt。脚本会启用 Certbot timer，并安装续期后重启 sing-box 的 deploy hook。
 
 如果 TCP/80 已被其他 Web 服务占用，脚本不会擅自停止该服务，而是终止自动签发并提示你处理，避免破坏现有网站。
 
@@ -202,14 +264,14 @@ Hysteria2 和 Cloudflare WS+TLS 使用 Certbot / Let's Encrypt。脚本会启用
 
 ```bash
 sb
-# 选择 23
+# 选择 24
 ```
 
 更新 sing-box：
 
 ```bash
 sb
-# 选择 22
+# 选择 23
 ```
 
 更新 sing-box 前会先备份现有配置和二进制；新版本如果无法通过现有配置检查，会尝试恢复旧二进制。
@@ -231,19 +293,26 @@ sb
 
 1. 检查 Bash 语法；
 2. 安装当前 sing-box 官方稳定版；
-3. 对 Reality、Hysteria2、VLESS WS+TLS 三种代表性服务端配置执行 `sing-box check`。
+3. 对 Reality、Hysteria2、TUIC v5、VLESS WS+TLS 四种代表性服务端配置执行 `sing-box check`。
 
-## 从 v0.2 升级
+## 从旧版本升级
 
-v1.0 会尽量保留已有 `/etc/sing-box/config.json`，只管理带以下 tag 的入站：
+v1.1 会尽量保留已有 `/etc/sing-box/config.json`，只管理带以下 tag 的入站：
 
 ```text
 vless-reality-in
 hysteria2-in
 vless-ws-tls-in
+tuic-in
 ```
 
-旧 v0.2 没有 v1 的状态文件，因此升级后如果要让 `sb` 显示完整分享链接，建议通过菜单 **2** 重新部署一次 Reality。重新部署前会自动备份当前配置。
+已有 v1.0 用户直接运行：
+
+```text
+sb -> 24
+```
+
+即可更新管理脚本并获得 TUIC 功能。
 
 ## 免责声明
 
