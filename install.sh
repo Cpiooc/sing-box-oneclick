@@ -3,7 +3,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 077
 
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
 SCRIPT_URL="${RAW_BASE}/install.sh"
@@ -31,6 +31,7 @@ C_CYAN='\033[36m'
 MODULES=(
   "lib/common.sh"
   "lib/protocols.sh"
+  "lib/tuic.sh"
   "lib/security.sh"
   "lib/maintenance.sh"
   "lib/menu.sh"
