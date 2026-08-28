@@ -9,7 +9,7 @@ system_summary() {
   ip -6 route show default 2>/dev/null | grep -q . && v6="有"
 
   echo "系统: ${PRETTY_NAME:-unknown} | 内核: $(uname -r)"
-  echo "sing-box: ${sb_state} | BBR: ${bbr} | IPv4: ${v4} | IPv6: ${v6}"
+  echo "sing-box: ${sb_state} | TCP BBR: ${bbr} | IPv4: ${v4} | IPv6: ${v6}"
 }
 
 menu() {
@@ -30,29 +30,30 @@ MENU
   3. 部署 / 重建 Hysteria2
   4. Reality + Hysteria2 双协议
   5. 部署 / 重建 Cloudflare VLESS WS + TLS
+  6. 部署 / 重建 TUIC v5
 
-  6. 查看全部节点 / 分享链接
-  7. 显示节点二维码
-  8. 删除单个节点
-  9. 查看 sing-box 状态 / 配置校验
- 10. 查看 sing-box 日志
- 11. 网络诊断
+  7. 查看全部节点 / 分享链接
+  8. 显示节点二维码
+  9. 删除单个节点
+ 10. 查看 sing-box 状态 / 配置校验
+ 11. 查看 sing-box 日志
+ 12. 网络诊断
 
- 12. 启用 BBR + fq
- 13. 验证 BBR
- 14. 配置 UFW 防火墙
- 15. 配置 Fail2ban SSH 防护
- 16. 启用系统自动安全更新
- 17. 完整安全自检
+ 13. 启用 TCP BBR + fq
+ 14. 验证 TCP BBR
+ 15. 配置 UFW 防火墙
+ 16. 配置 Fail2ban SSH 防护
+ 17. 启用系统自动安全更新
+ 18. 完整安全自检
 
- 18. 立即备份配置
- 19. 恢复配置备份
- 20. 查看 TLS 证书状态
- 21. 手动续期 TLS 证书
+ 19. 立即备份配置
+ 20. 恢复配置备份
+ 21. 查看 TLS 证书状态
+ 22. 手动续期 TLS 证书
 
- 22. 安全更新 sing-box
- 23. 更新本管理脚本
- 24. 完全卸载
+ 23. 安全更新 sing-box
+ 24. 更新本管理脚本
+ 25. 完全卸载
 
   0. 退出
 ==============================================================
@@ -64,25 +65,26 @@ MENU
       3) deploy_hysteria2; pause ;;
       4) deploy_dual_reality_hy2; pause ;;
       5) deploy_cloudflare_ws; pause ;;
-      6) show_nodes; pause ;;
-      7) show_qr_codes; pause ;;
-      8) remove_node; pause ;;
-      9) show_status; pause ;;
-      10) show_logs; pause ;;
-      11) network_diagnostics; pause ;;
-      12) enable_bbr || true; pause ;;
-      13) bbr_status; pause ;;
-      14) firewall_setup; pause ;;
-      15) fail2ban_setup; pause ;;
-      16) enable_security_updates; pause ;;
-      17) security_audit; pause ;;
-      18) backup_now; pause ;;
-      19) restore_backup; pause ;;
-      20) certificate_status; pause ;;
-      21) renew_certificates; pause ;;
-      22) safe_update_singbox || true; pause ;;
-      23) self_update; pause ;;
-      24) uninstall_all ;;
+      6) deploy_tuic; pause ;;
+      7) show_nodes; pause ;;
+      8) show_qr_codes; pause ;;
+      9) remove_node; pause ;;
+      10) show_status; pause ;;
+      11) show_logs; pause ;;
+      12) network_diagnostics; pause ;;
+      13) enable_bbr || true; pause ;;
+      14) bbr_status; pause ;;
+      15) firewall_setup; pause ;;
+      16) fail2ban_setup; pause ;;
+      17) enable_security_updates; pause ;;
+      18) security_audit; pause ;;
+      19) backup_now; pause ;;
+      20) restore_backup; pause ;;
+      21) certificate_status; pause ;;
+      22) renew_certificates; pause ;;
+      23) safe_update_singbox || true; pause ;;
+      24) self_update; pause ;;
+      25) uninstall_all ;;
       0) exit 0 ;;
       *) warn "无效选择。"; sleep 1 ;;
     esac
