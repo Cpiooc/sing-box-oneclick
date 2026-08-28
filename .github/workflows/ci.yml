@@ -21,6 +21,7 @@ jobs:
           bash -n install.sh
           bash -n tests/validate-configs.sh
           bash -n tests/module-smoke.sh
+          bash -n tests/client-export.sh
           for f in lib/*.sh; do bash -n "$f"; done
 
       - name: Install test dependencies
@@ -39,5 +40,11 @@ jobs:
           sudo bash /tmp/install-sing-box.sh
           sing-box version
 
-      - name: Validate representative configs
+      - name: Validate representative server configs
         run: bash tests/validate-configs.sh
+
+      - name: Validate generated client configs
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/client-export.sh
