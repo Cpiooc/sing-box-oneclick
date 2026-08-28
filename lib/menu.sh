@@ -1,65 +1,70 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
-system_summary() {
-  local sb_state="未安装" bbr="未启用" v4="无" v6="无"
-  have sing-box && sb_state=$(systemctl is-active sing-box 2>/dev/null || echo installed)
-  [[ $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || true) == "bbr" ]] && bbr="已启用"
-  ip -4 route show default 2>/dev/null | grep -q . && v4="有"
-  ip -6 route show default 2>/dev/null | grep -q . && v6="有"
-
-  echo "系统: ${PRETTY_NAME:-unknown} | 内核: $(uname -r)"
-  echo "sing-box: ${sb_state} | TCP BBR: ${bbr} | IPv4: ${v4} | IPv6: ${v6}"
+show_script_version() {
+  ui_banner
+  echo
+  echo -e "  管理脚本 : ${C_BOLD}v${SCRIPT_VERSION}${C_RESET}"
+  if have sing-box; then
+    echo -e "  sing-box : ${C_BOLD}$(sing-box version 2>/dev/null | head -n1 || echo unknown)${C_RESET}"
+  else
+    echo "  sing-box : 未安装"
+  fi
+  echo -e "  仓库     : ${C_CYAN}${REPO}${C_RESET}"
 }
 
 menu() {
   while true; do
-    clear || true
-    cat <<MENU
-==============================================================
-  sing-box 一键部署 / 安全管理脚本 v${SCRIPT_VERSION}
-  GitHub: ${REPO}
-==============================================================
-MENU
-    system_summary
-    cat <<'MENU'
---------------------------------------------------------------
-  1. 安装 / 修复 sing-box
+    [[ -t 1 ]] && clear || true
+    ui_banner
+    ui_dashboard
+    ui_rule
 
-  2. 部署 / 重建 VLESS + Reality
-  3. 部署 / 重建 Hysteria2
-  4. Reality + Hysteria2 双协议
-  5. 部署 / 重建 Cloudflare VLESS WS
-  6. 部署 / 重建 TUIC v5
+    ui_group "节点部署"
+    ui_item 1  "安装 / 修复 sing-box"
+    ui_item 2  "部署 / 重建 VLESS + Reality"
+    ui_item 3  "部署 / 重建 Hysteria2"
+    ui_item 4  "Reality + Hysteria2 双协议"
+    ui_item 5  "部署 / 重建 Cloudflare VLESS WS（TLS 可选）"
+    ui_item 6  "部署 / 重建 TUIC v5"
 
-  7. 查看全部节点 / 分享链接
-  8. 显示节点二维码
-  9. 删除单个节点
- 10. 查看 sing-box 状态 / 配置校验
- 11. 查看 sing-box 日志
- 12. 网络诊断
+    ui_group "节点管理"
+    ui_item 7  "查看全部节点 / 分享链接"
+    ui_item 8  "显示节点二维码"
+    ui_item 9  "删除单个节点"
+    ui_item 26 "切换证书 / TLS 模式"
 
- 13. 启用 TCP BBR + fq
- 14. 验证 TCP BBR
- 15. 配置 UFW 防火墙
- 16. 配置 Fail2ban SSH 防护
- 17. 启用系统自动安全更新
- 18. 完整安全自检
+    ui_group "运行与诊断"
+    ui_item 10 "sing-box 状态 / 配置校验"
+    ui_item 11 "查看 sing-box 日志"
+    ui_item 12 "网络诊断"
 
- 19. 立即备份配置
- 20. 恢复配置备份
- 21. 查看 TLS 证书状态
- 22. 手动续期 ACME 证书
+    ui_group "系统安全"
+    ui_item 13 "启用 TCP BBR + fq"
+    ui_item 14 "验证 TCP BBR"
+    ui_item 15 "配置 UFW 防火墙"
+    ui_item 16 "配置 Fail2ban SSH 防护"
+    ui_item 17 "启用系统自动安全更新"
+    ui_item 18 "完整安全自检"
 
- 23. 安全更新 sing-box
- 24. 更新本管理脚本
- 25. 完全卸载
- 26. 切换证书 / TLS 模式
+    ui_group "备份与证书"
+    ui_item 19 "立即备份配置"
+    ui_item 20 "恢复配置备份"
+    ui_item 21 "查看 TLS 证书状态"
+    ui_item 22 "手动续期 ACME 证书"
 
-  0. 退出
-==============================================================
-MENU
-    read -r -p "请选择: " choice
+    ui_group "维护"
+    ui_item 23 "安全更新 sing-box"
+    ui_item 24 "更新本管理脚本"
+    ui_item 25 "完全卸载"
+
+    echo
+    ui_rule
+    echo -e "  ${C_DIM}快捷命令：sb status · sb nodes · sb qr · sb logs · sb audit · sb cert${C_RESET}"
+    echo -e "  ${C_CYAN} 0${C_RESET}  退出"
+    echo
+    read -r -p "  请选择操作 › " choice
+
     case "$choice" in
       1) install_singbox; pause ;;
       2) deploy_reality; pause ;;
@@ -88,7 +93,7 @@ MENU
       25) uninstall_all ;;
       26) switch_certificate_tls; pause ;;
       0) exit 0 ;;
-      *) warn "无效选择。"; sleep 1 ;;
+      *) warn "无效选择：${choice:-空}"; sleep 1 ;;
     esac
   done
 }
@@ -105,5 +110,23 @@ main() {
   fi
 
   ensure_state
-  menu
+
+  case "${1:-menu}" in
+    menu|"") menu ;;
+    status) show_status ;;
+    nodes|info) ui_node_overview; echo; show_nodes ;;
+    qr) show_qr_codes ;;
+    logs|log) show_logs ;;
+    audit|check) security_audit ;;
+    bbr) bbr_status ;;
+    cert|certificate) certificate_status ;;
+    version|-v|--version) show_script_version ;;
+    help|-h|--help) ui_cli_help ;;
+    *)
+      err "未知命令：$1"
+      echo
+      ui_cli_help
+      return 2
+      ;;
+  esac
 }
