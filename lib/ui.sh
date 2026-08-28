@@ -131,6 +131,8 @@ ui_cli_help() {
   sb                 打开交互式管理菜单
   sb status          服务状态 + 配置校验
   sb nodes           查看节点与分享链接
+  sb edit            原地修改节点参数
+  sb export          生成客户端配置 / 订阅文件
   sb qr              显示节点二维码
   sb logs            查看最近日志
   sb audit           完整安全自检
