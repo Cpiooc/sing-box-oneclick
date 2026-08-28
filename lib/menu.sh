@@ -29,7 +29,7 @@ MENU
   2. 部署 / 重建 VLESS + Reality
   3. 部署 / 重建 Hysteria2
   4. Reality + Hysteria2 双协议
-  5. 部署 / 重建 Cloudflare VLESS WS + TLS
+  5. 部署 / 重建 Cloudflare VLESS WS
   6. 部署 / 重建 TUIC v5
 
   7. 查看全部节点 / 分享链接
@@ -49,11 +49,12 @@ MENU
  19. 立即备份配置
  20. 恢复配置备份
  21. 查看 TLS 证书状态
- 22. 手动续期 TLS 证书
+ 22. 手动续期 ACME 证书
 
  23. 安全更新 sing-box
  24. 更新本管理脚本
  25. 完全卸载
+ 26. 切换证书 / TLS 模式
 
   0. 退出
 ==============================================================
@@ -85,6 +86,7 @@ MENU
       23) safe_update_singbox || true; pause ;;
       24) self_update; pause ;;
       25) uninstall_all ;;
+      26) switch_certificate_tls; pause ;;
       0) exit 0 ;;
       *) warn "无效选择。"; sleep 1 ;;
     esac
