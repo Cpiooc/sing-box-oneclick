@@ -123,9 +123,9 @@ export_singbox_client() {
   chmod 600 "$target"
 
   if have sing-box; then
-    if ! sing-box check -c "$target" >/dev/null 2>&1; then
-      rm -f "$target"
+    if ! sing-box check -c "$target"; then
       warn "生成的 sing-box 客户端配置未通过当前 sing-box 校验。"
+      note "失败文件暂时保留在 $target，便于诊断；修复后重新运行 sb export 即可覆盖。"
       return 1
     fi
   fi
