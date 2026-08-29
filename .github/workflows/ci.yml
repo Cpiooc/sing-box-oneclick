@@ -23,16 +23,23 @@ jobs:
           bash -n tests/module-smoke.sh
           bash -n tests/client-export.sh
           bash -n tests/editor-patch.sh
+          bash -n tests/subscription-config.sh
           for f in lib/*.sh; do bash -n "$f"; done
 
       - name: Install test dependencies
-        run: sudo apt-get update && sudo apt-get install -y jq openssl curl ca-certificates
+        run: sudo apt-get update && sudo apt-get install -y jq openssl curl ca-certificates nginx
 
       - name: Module integration smoke test
         env:
           NO_COLOR: "1"
           TERM: dumb
         run: bash tests/module-smoke.sh
+
+      - name: Validate HTTPS subscription config
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/subscription-config.sh
 
       - name: Install current stable sing-box
         run: |
