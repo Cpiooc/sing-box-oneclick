@@ -65,6 +65,7 @@ ui_status_dot() {
 ui_dashboard() {
   local sb_state="未安装" sb_dot="unknown" bbr="未启用" bbr_dot="no"
   local v4="无" v6="无" v4_dot="no" v6_dot="no" node_count=0 sb_ver="-"
+  local sub_state="关闭" sub_dot="no" sub_port=""
 
   if have sing-box; then
     sb_state=$(systemctl is-active sing-box 2>/dev/null || true)
@@ -82,10 +83,16 @@ ui_dashboard() {
   if ip -6 route show default 2>/dev/null | grep -q .; then v6="有"; v6_dot="yes"; fi
   if [[ -f "$STATE_FILE" ]] && have jq; then
     node_count=$(jq -r '(.nodes // {}) | length' "$STATE_FILE" 2>/dev/null || echo 0)
+    if [[ $(jq -r '.subscription.enabled // false' "$STATE_FILE" 2>/dev/null || echo false) == true ]]; then
+      sub_state="HTTPS 在线"
+      sub_dot="yes"
+      sub_port=$(jq -r '.subscription.port // empty' "$STATE_FILE" 2>/dev/null || true)
+    fi
   fi
 
   echo -e "  $(ui_status_dot "$sb_dot") sing-box ${C_BOLD}${sb_state}${C_RESET} ${C_DIM}(${sb_ver})${C_RESET}    $(ui_status_dot "$bbr_dot") TCP ${bbr}"
   echo -e "  $(ui_status_dot "$v4_dot") IPv4 ${v4}    $(ui_status_dot "$v6_dot") IPv6 ${v6}    ${C_MAGENTA}◆${C_RESET} 节点 ${C_BOLD}${node_count}${C_RESET} 个"
+  echo -e "  $(ui_status_dot "$sub_dot") 私有订阅 ${C_BOLD}${sub_state}${C_RESET}${sub_port:+ ${C_DIM}(TCP/${sub_port})${C_RESET}}"
 }
 
 ui_group() {
@@ -132,7 +139,8 @@ ui_cli_help() {
   sb status          服务状态 + 配置校验
   sb nodes           查看节点与分享链接
   sb edit            原地修改节点参数
-  sb export          生成客户端配置 / 订阅文件
+  sb export          生成本地客户端配置 / 订阅文件
+  sb sub             管理安全 HTTPS 在线订阅
   sb qr              显示节点二维码
   sb logs            查看最近日志
   sb audit           完整安全自检
