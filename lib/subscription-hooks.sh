@@ -3,7 +3,7 @@
 
 # Loaded after client-export.sh and subscription.sh. These overrides keep
 # local exports, published payloads, and the HTTPS service synchronized while
-# applying a few defense-in-depth rules without complicating the core module.
+# applying defense-in-depth rules without complicating the core modules.
 
 refresh_client_exports_if_present() {
   [[ -f "$CLIENT_EXPORT_MARKER" ]] || return 0
@@ -36,6 +36,36 @@ validate_subscription_nginx_config() {
   nginx_bin=$(subscription_nginx_bin)
   [[ -n "$nginx_bin" ]] || die "未找到 nginx。"
   "$nginx_bin" -t -q -c "$SUBSCRIPTION_CONFIG"
+}
+
+# Override the generic UFW helper only for the active Cloudflare subscription
+# origin. This makes the origin port reachable from Cloudflare edges but not
+# directly from arbitrary Internet hosts. All other callers keep the original
+# behavior.
+allow_if_ufw_active() {
+  local port=$1 proto=$2 sub_enabled=false sub_port="" sub_mode=""
+  if [[ -f "${STATE_FILE:-}" ]] && have jq; then
+    sub_enabled=$(jq -r '.subscription.enabled // false' "$STATE_FILE" 2>/dev/null || echo false)
+    sub_port=$(jq -r '.subscription.port // empty' "$STATE_FILE" 2>/dev/null || true)
+    sub_mode=$(jq -r '.subscription.proxy_mode // empty' "$STATE_FILE" 2>/dev/null || true)
+  fi
+
+  if [[ "$proto" == tcp && "$sub_enabled" == true && "$sub_port" == "$port" && "$sub_mode" == cloudflare ]]; then
+    if have ufw && ufw status 2>/dev/null | grep -q '^Status: active'; then
+      ufw_allow_cloudflare_only "$port"
+      info "HTTPS 订阅源站 TCP/$port 已限制为仅 Cloudflare 官方边缘 IP 可访问。"
+    else
+      warn "UFW 当前未启用。Cloudflare 订阅源站建议之后配置 UFW 源地址限制。"
+    fi
+    return 0
+  fi
+
+  if have ufw && ufw status 2>/dev/null | grep -q '^Status: active'; then
+    ufw allow "${port}/${proto}" >/dev/null || true
+    info "UFW 已放行 ${proto^^}/$port。"
+  else
+    warn "UFW 当前未启用。请确认云厂商安全组已放行 ${proto^^}/$port。"
+  fi
 }
 
 write_export_readme() {
