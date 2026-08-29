@@ -38,6 +38,59 @@ validate_subscription_nginx_config() {
   "$nginx_bin" -t -q -c "$SUBSCRIPTION_CONFIG"
 }
 
+write_export_readme() {
+  ensure_client_export_dir
+  local online="disabled"
+  subscription_enabled && online="enabled"
+  cat > "${CLIENT_EXPORT_DIR}/README.txt" <<EOF
+sing-box-oneclick client exports
+Generated: $(date -Is 2>/dev/null || date)
+
+Files:
+  sing-box-client.json           sing-box client, local mixed proxy 127.0.0.1:2080
+  mihomo.yaml                    Mihomo / Clash.Meta-compatible client config
+  v2rayn-subscription.txt        Standard VLESS / Hysteria2 / TUIC share-link content
+  v2rayn-subscription-base64.txt Legacy-compatible Base64 form
+
+Security:
+  Root-only export directory: ${CLIENT_EXPORT_DIR}
+  HTTPS private subscription: ${online}
+  These files contain UUIDs/passwords. Do not upload them to a public repository
+  or an untrusted subscription converter.
+  If HTTPS publishing is enabled, manage it with: sb sub
+EOF
+  chmod 600 "${CLIENT_EXPORT_DIR}/README.txt"
+}
+
+show_client_export_status() {
+  ensure_client_export_dir
+  echo
+  headmsg "本地客户端配置 / 订阅"
+  echo -e "  ${C_DIM}目录：${CLIENT_EXPORT_DIR}${C_RESET}"
+  echo
+
+  local f
+  for f in sing-box-client.json mihomo.yaml v2rayn-subscription.txt v2rayn-subscription-base64.txt README.txt; do
+    if [[ -f "${CLIENT_EXPORT_DIR}/${f}" ]]; then
+      printf '  %s %-36s %s\n' "$(ui_status_dot yes)" "$f" "$(stat -c '%y' "${CLIENT_EXPORT_DIR}/${f}" 2>/dev/null | cut -d. -f1)"
+    else
+      printf '  %s %-36s %s\n' "$(ui_status_dot no)" "$f" "未生成"
+    fi
+  done
+
+  echo
+  if [[ -f "$CLIENT_EXPORT_MARKER" ]]; then
+    note "本地自动刷新已启用：脚本管理的节点发生变化后会尽量同步导出文件。"
+  fi
+  if subscription_enabled; then
+    info "HTTPS 私有订阅已启用；节点变化后会同步低权限发布副本。"
+    note "完整 URL 默认不在这里显示，请使用 sb sub -> 显示完整订阅 URL。"
+  else
+    note "当前未开启公网订阅；需要时运行 sb sub。"
+  fi
+  warn "本地导出文件包含节点凭据，请像私钥一样保护。"
+}
+
 disable_https_subscription() {
   ensure_state
   subscription_enabled || { note "HTTPS 在线订阅已经是关闭状态。"; return 0; }
