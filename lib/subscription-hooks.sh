@@ -5,8 +5,27 @@
 # local exports, published payloads, and the HTTPS service synchronized while
 # applying defense-in-depth rules without complicating the core modules.
 
+purge_client_export_payloads() {
+  rm -f "${CLIENT_EXPORT_DIR}/sing-box-client.json" \
+        "${CLIENT_EXPORT_DIR}/mihomo.yaml" \
+        "${CLIENT_EXPORT_DIR}/v2rayn-subscription.txt" \
+        "${CLIENT_EXPORT_DIR}/v2rayn-subscription-base64.txt"
+  if [[ -n "${SUBSCRIPTION_PUBLISH_DIR:-}" ]]; then
+    rm -f "${SUBSCRIPTION_PUBLISH_DIR}/sing-box-client.json" \
+          "${SUBSCRIPTION_PUBLISH_DIR}/mihomo.yaml" \
+          "${SUBSCRIPTION_PUBLISH_DIR}/v2rayn-subscription.txt" \
+          "${SUBSCRIPTION_PUBLISH_DIR}/v2rayn-subscription-base64.txt"
+  fi
+}
+
 refresh_client_exports_if_present() {
   [[ -f "$CLIENT_EXPORT_MARKER" ]] || return 0
+
+  if [[ $(jq -r '(.nodes // {}) | length' "$STATE_FILE" 2>/dev/null || echo 0) -eq 0 ]]; then
+    purge_client_export_payloads
+    note "已删除最后一个节点，本地导出与 HTTPS 发布副本中的旧节点凭据已清理。"
+    return 0
+  fi
 
   if ! generate_all_client_exports_quiet; then
     warn "节点已修改，但本地客户端导出自动刷新失败；请稍后运行 sb export 手工刷新。"
