@@ -140,6 +140,56 @@ show_client_export_status() {
   warn "本地导出文件包含节点凭据，请像私钥一样保护。"
 }
 
+certificate_status() {
+  ensure_state
+  local keys=() key name mode tls cert domain sub_cert sub_domain sub_mode sub_port sub_enabled shown=0
+  mapfile -t keys < <(jq -r '.nodes | to_entries[] | select((.value.certificate==true) or (.value.tls_enabled==true)) | .key' "$STATE_FILE")
+
+  for key in "${keys[@]}"; do
+    shown=1
+    name=$(jq -r --arg k "$key" '.nodes[$k].name // $k' "$STATE_FILE")
+    mode=$(jq -r --arg k "$key" '.nodes[$k].certificate_mode // "acme/legacy"' "$STATE_FILE")
+    tls=$(jq -r --arg k "$key" '.nodes[$k].tls_enabled // true' "$STATE_FILE")
+    cert=$(jq -r --arg k "$key" '.nodes[$k].certificate_path // empty' "$STATE_FILE")
+    domain=$(jq -r --arg k "$key" '.nodes[$k].domain // empty' "$STATE_FILE")
+    [[ -z "$cert" && "$mode" == "acme/legacy" && -n "$domain" ]] && cert="/etc/letsencrypt/live/${domain}/fullchain.pem"
+
+    echo
+    headmsg "$name"
+    echo "TLS       : $tls"
+    echo "证书模式  : $mode"
+    echo "SNI/名称  : ${domain:-无}"
+    if [[ "$tls" == true && -n "$cert" ]]; then
+      echo "证书路径  : $cert"
+      openssl x509 -in "$cert" -noout -subject -issuer -serial -dates 2>/dev/null || warn "证书不存在或不可读。"
+    fi
+  done
+
+  sub_cert=$(jq -r '.subscription.certificate_path // empty' "$STATE_FILE")
+  if [[ -n "$sub_cert" ]]; then
+    shown=1
+    sub_domain=$(jq -r '.subscription.domain // "-"' "$STATE_FILE")
+    sub_mode=$(jq -r '.subscription.certificate_mode // "-"' "$STATE_FILE")
+    sub_port=$(jq -r '.subscription.port // "-"' "$STATE_FILE")
+    sub_enabled=$(jq -r '.subscription.enabled // false' "$STATE_FILE")
+    echo
+    headmsg "HTTPS 私有订阅"
+    echo "状态      : $sub_enabled"
+    echo "域名      : $sub_domain"
+    echo "端口      : $sub_port/TCP"
+    echo "证书模式  : $sub_mode"
+    echo "证书路径  : $sub_cert"
+    openssl x509 -in "$sub_cert" -noout -subject -issuer -serial -dates 2>/dev/null || warn "订阅证书不存在或不可读。"
+  fi
+
+  if (( shown == 0 )); then
+    warn "没有脚本管理的普通 TLS 证书或 HTTPS 订阅证书。Reality 不使用普通证书。"
+  fi
+
+  echo
+  systemctl status certbot.timer --no-pager -l 2>/dev/null | sed -n '1,12p' || true
+}
+
 disable_https_subscription() {
   ensure_state
   subscription_enabled || { note "HTTPS 在线订阅已经是关闭状态。"; return 0; }
