@@ -41,6 +41,7 @@ MODULES=(
   "lib/editor.sh"
   "lib/client-export.sh"
   "lib/subscription.sh"
+  "lib/subscription-hooks.sh"
   "lib/views.sh"
   "lib/menu.sh"
 )
