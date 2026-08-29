@@ -10,6 +10,12 @@ show_status() {
   echo
   headmsg "===== sing-box 监听端口 ====="
   ss -lntup 2>/dev/null | grep sing-box || true
+
+  if systemctl list-unit-files 2>/dev/null | grep -q '^sing-box-oneclick-subscription.service'; then
+    echo
+    headmsg "===== HTTPS 私有订阅 ====="
+    systemctl status sing-box-oneclick-subscription.service --no-pager -l 2>/dev/null | sed -n '1,14p' || true
+  fi
 }
 
 show_logs() {
@@ -153,10 +159,22 @@ renew_certificates() {
 }
 
 uninstall_all() {
-  warn "此操作会停止 sing-box，删除脚本管理配置、状态、备份和 sb 命令。"
-  warn "Let's Encrypt 证书、BBR、UFW、Fail2ban 和系统安全更新设置默认保留，避免误删系统级配置。"
+  warn "此操作会停止 sing-box 和脚本管理的 HTTPS 订阅服务，并删除配置、状态、备份和 sb 命令。"
+  warn "Let's Encrypt 证书、BBR、UFW、Fail2ban、Nginx 软件包和系统安全更新设置默认保留，避免误删系统级配置。"
   read -r -p "请输入 DELETE 确认完全卸载脚本管理内容: " ans
   [[ "$ans" == "DELETE" ]] || { warn "已取消。"; return 0; }
+
+  local sub_service sub_unit sub_publish sub_hook
+  sub_service=${SUBSCRIPTION_SERVICE:-sing-box-oneclick-subscription.service}
+  sub_unit=${SUBSCRIPTION_UNIT:-/etc/systemd/system/sing-box-oneclick-subscription.service}
+  sub_publish=${SUBSCRIPTION_PUBLISH_DIR:-/var/lib/sing-box-oneclick-subscription}
+  sub_hook=${SUBSCRIPTION_CERTBOT_HOOK:-/etc/letsencrypt/renewal-hooks/deploy/sing-box-oneclick-subscription-reload.sh}
+
+  systemctl stop "$sub_service" 2>/dev/null || true
+  systemctl disable "$sub_service" 2>/dev/null || true
+  rm -f "$sub_unit" "$sub_hook"
+  rm -rf "$sub_publish"
+  systemctl daemon-reload 2>/dev/null || true
 
   systemctl stop sing-box 2>/dev/null || true
   systemctl disable sing-box 2>/dev/null || true
@@ -167,6 +185,6 @@ uninstall_all() {
 
   rm -rf "$CONFIG_DIR" "$APP_DIR" "$MANAGER_DIR"
   rm -f "$NODE_INFO" "$MANAGER_LINK"
-  info "已删除 sing-box 及 sing-box-oneclick 管理内容。系统级安全设置已保留。"
+  info "已删除 sing-box、HTTPS 订阅实例及 sing-box-oneclick 管理内容。系统级安全设置与 Nginx 软件包已保留。"
   exit 0
 }
