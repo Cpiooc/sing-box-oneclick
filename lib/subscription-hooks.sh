@@ -44,8 +44,13 @@ refresh_client_exports_if_present() {
 harden_subscription_nginx_config() {
   [[ -f "$SUBSCRIPTION_CONFIG" ]] || return 1
   # The access path contains the bearer Token. Never persist it in Nginx or
-  # journald access logs. Error logging remains enabled for diagnostics.
+  # journald access logs. Suppress normal missing-file logging as well, because
+  # Nginx error entries can include the original request URI.
   sed -i 's|^[[:space:]]*access_log /dev/stdout combined;|    access_log off;|' "$SUBSCRIPTION_CONFIG"
+  sed -i 's|^error_log stderr warn;|error_log stderr error;|' "$SUBSCRIPTION_CONFIG"
+  if ! grep -Fq 'log_not_found off;' "$SUBSCRIPTION_CONFIG"; then
+    sed -i '/^[[:space:]]*server_name /a\        log_not_found off;' "$SUBSCRIPTION_CONFIG"
+  fi
   chmod 600 "$SUBSCRIPTION_CONFIG"
 }
 
