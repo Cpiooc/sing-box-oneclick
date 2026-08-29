@@ -18,6 +18,12 @@ MANAGER_LINK="${APP_DIR}/sb"
 BBR_SYSCTL="${APP_DIR}/bbr.conf"
 FAIL2BAN_JAIL="${APP_DIR}/fail2ban.conf"
 CERTBOT_HOOK="${APP_DIR}/certbot-hook.sh"
+SUBSCRIPTION_CONFIG="${APP_DIR}/subscription-nginx.conf"
+SUBSCRIPTION_UNIT="${APP_DIR}/subscription.service"
+SUBSCRIPTION_PUBLISH_DIR="${APP_DIR}/subscription-publish"
+SUBSCRIPTION_RUNTIME_DIR="${APP_DIR}/subscription-run"
+SUBSCRIPTION_CERTBOT_HOOK="${APP_DIR}/subscription-certbot-hook.sh"
+SUBSCRIPTION_USER="$(id -un)"
 
 C_RESET=''
 C_RED=''
@@ -38,6 +44,8 @@ modules=(
   runtime.sh
   editor.sh
   client-export.sh
+  subscription.sh
+  subscription-hooks.sh
   views.sh
   menu.sh
 )
@@ -54,6 +62,9 @@ required=(
   edit_node_parameters edit_node_port rebuild_node_uri
   client_export_menu export_singbox_client export_mihomo_client export_v2rayn_subscription
   generate_all_client_exports refresh_client_exports_if_present
+  subscription_menu enable_https_subscription show_https_subscription_status
+  show_subscription_urls rotate_subscription_token refresh_https_subscription disable_https_subscription
+  write_subscription_nginx_config publish_subscription_payloads subscription_enabled
   apply_candidate apply_runtime_change singbox_can_reload
   show_status show_nodes show_qr_codes show_logs network_diagnostics
   bbr_status certificate_status security_audit
@@ -72,6 +83,7 @@ done
 [[ "$(type -t bbr_status)" == "function" ]]
 [[ "$(type -t edit_node_parameters)" == "function" ]]
 [[ "$(type -t generate_all_client_exports)" == "function" ]]
+[[ "$(type -t subscription_menu)" == "function" ]]
 
 rm -rf "$APP_DIR"
 echo "All modules loaded and required functions are present."
