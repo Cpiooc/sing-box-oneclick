@@ -24,7 +24,7 @@ menu() {
     ui_rule
 
     ui_group "核心部署" "小白推荐：按提示一路使用默认值"
-    ui_item 1  "安装 / 修复 sing-box" "官方稳定版"
+    ui_item 1  "安装 / 修复 sing-box" "最新稳定版 · 小白推荐"
     ui_item 2  "VLESS + Reality" "TCP · Vision · 主力推荐"
     ui_item 3  "Hysteria2" "UDP · QUIC · 主力推荐"
     ui_item 4  "Reality + Hysteria2" "TCP/UDP 双 443"
@@ -71,13 +71,13 @@ menu() {
     ui_item 20 "快速恢复备份"
     ui_item 21 "查看 TLS 证书状态"
     ui_item 22 "手动续期 ACME 证书"
-    ui_item 23 "安全更新 sing-box"
+    ui_item 23 "sing-box 版本管理" "最新 / 指定版本 / 上一版回退"
     ui_item 24 "安全更新本管理脚本" "锁定 commit + SHA256"
     ui_item 25 "完全卸载"
     ui_group_end
 
     echo
-    echo -e "  ${C_DIM}CLI  sb doctor · sb nodes · sb reveal · sb qr · sb edit · sb sub · sb backup · sb bbr · sb hy2-hop${C_RESET}"
+    echo -e "  ${C_DIM}CLI  sb doctor · sb nodes · sb core · sb bbr · sb sub · sb backup · sb hy2-hop${C_RESET}"
     echo -e "  ${C_CYAN} 0${C_RESET}  退出"
     echo
     read -r -p "  请选择操作 › " choice
@@ -105,7 +105,7 @@ menu() {
       20) restore_backup; pause ;;
       21) certificate_status; pause ;;
       22) renew_certificates; pause ;;
-      23) safe_update_singbox || true; pause ;;
+      23) core_menu; pause ;;
       24) self_update; pause ;;
       25) uninstall_all ;;
       26) switch_certificate_tls; pause ;;
@@ -147,6 +147,7 @@ main() {
     export|client) client_export_menu ;;
     subscription|sub) subscription_menu ;;
     backup) backup_menu ;;
+    core) core_cli "${2:-menu}" "${3:-}" ;;
     hy2-hop|hy2hop) hy2_hop_cli "${2:-menu}" ;;
     anytls) deploy_anytls ;;
     trojan) deploy_trojan ;;
