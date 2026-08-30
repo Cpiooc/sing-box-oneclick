@@ -54,6 +54,12 @@ jobs:
           TERM: dumb
         run: bash tests/subscription-config.sh
 
+      - name: Validate certificate pinning and client guidance
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/cert-pinning.sh
+
       - name: Validate bundle SHA256
         run: |
           expected=$(awk '
