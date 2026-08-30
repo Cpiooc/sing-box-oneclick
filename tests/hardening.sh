@@ -94,7 +94,7 @@ declare -F backup_menu >/dev/null
 declare -F reveal_nodes >/dev/null
 declare -F firewall_setup_v17 >/dev/null
 declare -F doctor_check_systemd_resilience >/dev/null
-declare -f doctor | grep -q 'doctor_check_systemd_resilience'
+[[ $(declare -f doctor) == *doctor_check_systemd_resilience* ]]
 
 SYSTEMD_ENABLED=enabled
 SYSTEMD_RESTART=on-failure
