@@ -95,7 +95,7 @@ doctor_check_systemd_resilience() {
 # the entire doctor function into another module.
 if declare -F doctor >/dev/null 2>&1; then
   _doctor_definition=$(declare -f doctor)
-  _doctor_definition=$(printf '%s\n' "$_doctor_definition" | sed '/^[[:space:]]*ui_rule[[:space:]]*$/i\    doctor_check_systemd_resilience')
+  _doctor_definition=$(printf '%s\n' "$_doctor_definition" | sed '/^[[:space:]]*ui_rule[[:space:]]*;[[:space:]]*$/i\    doctor_check_systemd_resilience')
   eval "$_doctor_definition"
   unset _doctor_definition
 fi
