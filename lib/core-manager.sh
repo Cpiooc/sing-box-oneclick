@@ -50,7 +50,7 @@ core_release_exists() {
   local version json
   version=$(core_normalize_version "$1") || return 1
   json=$(core_release_json "$version") || return 1
-  [[ $(jq -r '.draft // true' <<< "$json") == false ]]
+  [[ $(jq -r '(.draft == false) and ((.tag_name // "") != "")' <<< "$json") == true ]]
 }
 
 core_release_kind() {
@@ -229,6 +229,7 @@ core_is_downgrade() {
 
 core_confirm_version_change() {
   local target=$1 current=${2:-} kind=${3:-stable} ans
+  [[ ${SB_CORE_ASSUME_YES:-0} == 1 ]] && return 0
   [[ -t 0 && -t 1 ]] || return 0
 
   echo
@@ -350,7 +351,7 @@ core_rollback() {
     read -r -p "  确认回退？[y/N] › " ans
     [[ ${ans,,} == y || ${ans,,} == yes ]] || { warn "已取消。"; return 0; }
   fi
-  core_install_version "$target"
+  SB_CORE_ASSUME_YES=1 core_install_version "$target"
 }
 
 core_status() {
@@ -423,14 +424,14 @@ core_cli() {
 
 # Preserve old entry points but route them through the safer version manager.
 install_singbox_core() {
-  core_update_latest
+  SB_CORE_ASSUME_YES=1 core_update_latest
 }
 
 install_singbox() {
   if have sing-box; then
     core_menu
   else
-    core_update_latest
+    SB_CORE_ASSUME_YES=1 core_update_latest
   fi
 }
 
