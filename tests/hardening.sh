@@ -97,10 +97,36 @@ declare -F firewall_setup_v17 >/dev/null
 declare -F doctor_check_systemd_resilience >/dev/null
 declare -F manager_check_update >/dev/null
 declare -F manager_update_notice >/dev/null
+declare -F novice_guide >/dev/null
+declare -F novice_first_run_hint >/dev/null
+declare -F novice_protocol_intro >/dev/null
+declare -F select_certificate_mode_pre_novice >/dev/null
+declare -F deploy_reality_pre_novice >/dev/null
+declare -F enable_https_subscription_pre_novice >/dev/null
 [[ $(declare -f doctor) == *doctor_check_systemd_resilience* ]]
+[[ $(declare -f deploy_reality) == *novice_protocol_intro* ]]
+[[ $(declare -f select_certificate_mode) == *novice_tls_hint* ]]
+[[ $(declare -f enable_https_subscription) == *novice_subscription_intro* ]]
 main_def=$(declare -f main)
 [[ "$main_def" == *update* ]]
 [[ "$main_def" == *self-update* ]]
+[[ "$main_def" == *guide* ]]
+menu_def=$(declare -f menu)
+[[ "$menu_def" == *'ui_item 35'* ]]
+
+novice_guide > "$work/guide.txt"
+grep -Fq 'Reality SNI' "$work/guide.txt"
+grep -Fq 'DNS only / 灰云' "$work/guide.txt"
+grep -Fq 'HY2 端口跳跃' "$work/guide.txt"
+grep -Fq '直接按 Enter' "$work/guide.txt"
+
+state_with_node=$(cat "$STATE_FILE")
+printf '%s\n' '{"version":1,"nodes":{}}' > "$STATE_FILE"
+novice_first_run_hint > "$work/first-run.txt"
+grep -Fq '第一次使用' "$work/first-run.txt"
+grep -Fq '2 Reality' "$work/first-run.txt"
+grep -Fq 'sb guide' "$work/first-run.txt"
+printf '%s\n' "$state_with_node" > "$STATE_FILE"
 
 local_commit=1111111111111111111111111111111111111111
 MOCK_REMOTE_COMMIT=$local_commit
@@ -162,4 +188,4 @@ doctor_check_systemd_resilience > "$work/doctor-systemd-warn.txt"
 grep -Fq 'systemctl enable sing-box' "$work/doctor-systemd-warn.txt"
 grep -Fq '安装 / 修复 sing-box' "$work/doctor-systemd-warn.txt"
 
-echo "Masking, redacted diff, backup retention, TCP+UDP UFW, update reminder and doctor systemd resilience checks passed."
+echo "Masking, redacted diff, backup retention, TCP+UDP UFW, beginner guidance, update reminder and doctor systemd resilience checks passed."
