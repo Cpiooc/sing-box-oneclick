@@ -43,10 +43,13 @@ modules=(
   tls-safe.sh
   runtime.sh
   editor.sh
+  extra-protocols.sh
   client-export.sh
+  client-extra.sh
   subscription.sh
   subscription-hooks.sh
   views.sh
+  views-extra.sh
   menu.sh
 )
 
@@ -56,10 +59,11 @@ for module in "${modules[@]}"; do
 done
 
 required=(
-  main menu ui_banner ui_dashboard ui_node_overview ui_cli_help
+  main menu ui_banner ui_dashboard ui_node_overview ui_cli_help ui_group ui_item ui_group_end
   deploy_reality deploy_hysteria2 deploy_tuic deploy_cloudflare_ws
+  deploy_anytls deploy_trojan deploy_shadowsocks
   switch_certificate_tls select_certificate_mode
-  edit_node_parameters edit_node_port rebuild_node_uri
+  edit_node_parameters edit_node_port edit_ss_port rebuild_node_uri
   client_export_menu export_singbox_client export_mihomo_client export_v2rayn_subscription
   generate_all_client_exports refresh_client_exports_if_present
   subscription_menu enable_https_subscription show_https_subscription_status
@@ -68,7 +72,7 @@ required=(
   apply_candidate apply_runtime_change singbox_can_reload
   show_status show_nodes show_qr_codes show_logs network_diagnostics
   bbr_status certificate_status security_audit
-  backup_now restore_backup safe_update_singbox self_update
+  backup_now restore_backup safe_update_singbox self_update firewall_setup_v16
 )
 
 for fn in "${required[@]}"; do
@@ -84,6 +88,9 @@ done
 [[ "$(type -t edit_node_parameters)" == "function" ]]
 [[ "$(type -t generate_all_client_exports)" == "function" ]]
 [[ "$(type -t subscription_menu)" == "function" ]]
+[[ "$(type -t deploy_anytls)" == "function" ]]
+[[ "$(type -t deploy_trojan)" == "function" ]]
+[[ "$(type -t deploy_shadowsocks)" == "function" ]]
 
 rm -rf "$APP_DIR"
 echo "All modules loaded and required functions are present."
