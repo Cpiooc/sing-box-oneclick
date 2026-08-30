@@ -51,6 +51,7 @@ MODULES=(
   "lib/views.sh"
   "lib/views-extra.sh"
   "lib/usability.sh"
+  "lib/firewall-v17.sh"
   "lib/menu.sh"
 )
 
