@@ -56,7 +56,6 @@ jobs:
 
       - name: Validate bundle SHA256
         run: |
-          sha256sum -c SHA256SUMS
           expected=$(awk '
             /MODULES=\(/ {in_modules=1; next}
             in_modules && /^\)/ {in_modules=0; next}
@@ -67,6 +66,9 @@ jobs:
               print line
             }
           ' install.sh)
+          echo "Actual bundle SHA256:"
+          sha256sum install.sh $expected VERSION
+          sha256sum -c SHA256SUMS
           for f in install.sh $expected VERSION; do
             grep -Fq "  $f" SHA256SUMS || { echo "missing SHA256 entry: $f" >&2; exit 1; }
           done
