@@ -3,7 +3,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 077
 
-SCRIPT_VERSION="1.5.0"
+SCRIPT_VERSION="1.6.0"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
 SCRIPT_URL="${RAW_BASE}/install.sh"
@@ -39,10 +39,13 @@ MODULES=(
   "lib/tls-safe.sh"
   "lib/runtime.sh"
   "lib/editor.sh"
+  "lib/extra-protocols.sh"
   "lib/client-export.sh"
+  "lib/client-extra.sh"
   "lib/subscription.sh"
   "lib/subscription-hooks.sh"
   "lib/views.sh"
+  "lib/views-extra.sh"
   "lib/menu.sh"
 )
 
