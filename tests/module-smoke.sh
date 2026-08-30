@@ -17,6 +17,8 @@ MANAGER_FILE="${MANAGER_DIR}/install.sh"
 MANAGER_LINK="${APP_DIR}/sb"
 BBR_SYSCTL="${APP_DIR}/bbr.conf"
 BBR_STATE_FILE="${APP_DIR}/bbr-state.json"
+CORE_STATE_DIR="${APP_DIR}/core-manager"
+CORE_BACKUP_DIR="${CORE_STATE_DIR}/backups"
 FAIL2BAN_JAIL="${APP_DIR}/fail2ban.conf"
 CERTBOT_HOOK="${APP_DIR}/certbot-hook.sh"
 SUBSCRIPTION_CONFIG="${APP_DIR}/subscription-nginx.conf"
@@ -42,6 +44,7 @@ modules=(
   security.sh
   bbr-manager.sh
   maintenance.sh
+  core-manager.sh
   tls-manager.sh
   tls-safe.sh
   runtime.sh
@@ -78,6 +81,7 @@ required=(
   apply_candidate apply_runtime_change singbox_can_reload
   show_status show_nodes reveal_nodes show_qr_codes show_logs network_diagnostics
   enable_bbr disable_bbr bbr_status bbr_menu bbr_cli certificate_status security_audit doctor
+  core_current_version core_latest_stable_version core_install_version core_update_latest core_rollback core_list_versions core_status core_menu core_cli
   backup_now backup_menu backup_diff prune_backups restore_backup safe_update_singbox self_update
   firewall_setup_v17 reconcile_managed_ufw_rules
   hy2_port_hopping_menu hy2_hop_cli hy2_hop_status hy2_hop_apply_from_state
@@ -94,6 +98,7 @@ done
 [[ "$(type -t show_status)" == "function" ]]
 [[ "$(type -t doctor)" == "function" ]]
 [[ "$(type -t bbr_cli)" == "function" ]]
+[[ "$(type -t core_cli)" == "function" ]]
 [[ "$(type -t edit_node_parameters)" == "function" ]]
 [[ "$(type -t generate_all_client_exports)" == "function" ]]
 [[ "$(type -t subscription_menu)" == "function" ]]
@@ -103,4 +108,4 @@ done
 [[ "$(type -t hy2_port_hopping_menu)" == "function" ]]
 
 rm -rf "$APP_DIR"
-echo "All v1.7.1 modules loaded and required functions are present."
+echo "All v1.8.0 modules loaded and required functions are present."

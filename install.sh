@@ -3,7 +3,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 077
 
-SCRIPT_VERSION="1.7.1"
+SCRIPT_VERSION="1.8.0"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
 REPO_API="https://api.github.com/repos/${REPO}"
@@ -39,6 +39,7 @@ MODULES=(
   "lib/security.sh"
   "lib/bbr-manager.sh"
   "lib/maintenance.sh"
+  "lib/core-manager.sh"
   "lib/tls-manager.sh"
   "lib/tls-safe.sh"
   "lib/runtime.sh"
