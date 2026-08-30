@@ -24,6 +24,7 @@ jobs:
           bash -n tests/client-export.sh
           bash -n tests/editor-patch.sh
           bash -n tests/subscription-config.sh
+          bash -n tests/extra-protocols.sh
           for f in lib/*.sh; do bash -n "$f"; done
 
       - name: Install test dependencies
@@ -50,6 +51,12 @@ jobs:
 
       - name: Validate representative server configs
         run: bash tests/validate-configs.sh
+
+      - name: Validate AnyTLS Trojan and Shadowsocks helpers
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/extra-protocols.sh
 
       - name: Validate in-place parameter editing
         env:
