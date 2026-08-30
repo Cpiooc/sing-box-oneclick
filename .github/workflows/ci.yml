@@ -42,6 +42,12 @@ jobs:
           TERM: dumb
         run: bash tests/bbr-manager.sh
 
+      - name: Validate sing-box core version manager
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/core-manager.sh
+
       - name: Validate HTTPS subscription config
         env:
           NO_COLOR: "1"
