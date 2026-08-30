@@ -103,17 +103,17 @@ main_def=$(declare -f main)
 [[ "$main_def" == *self-update* ]]
 
 local_commit=1111111111111111111111111111111111111111
-remote_commit=$local_commit
+MOCK_REMOTE_COMMIT=$local_commit
 printf '%s\n' "$local_commit" > "$MANAGER_DIR/COMMIT"
-manager_remote_commit_quick() { printf '%s' "$remote_commit"; }
+manager_remote_commit_quick() { printf '%s' "$MOCK_REMOTE_COMMIT"; }
 
 manager_check_update
 [[ "$MANAGER_UPDATE_STATE" == current ]]
 [[ "$MANAGER_LOCAL_COMMIT" == "$local_commit" ]]
-[[ "$MANAGER_REMOTE_COMMIT" == "$remote_commit" ]]
+[[ "$MANAGER_REMOTE_COMMIT" == "$MOCK_REMOTE_COMMIT" ]]
 [[ -z "$(manager_update_notice)" ]]
 
-remote_commit=2222222222222222222222222222222222222222
+MOCK_REMOTE_COMMIT=2222222222222222222222222222222222222222
 manager_check_update
 [[ "$MANAGER_UPDATE_STATE" == available ]]
 manager_update_notice > "$work/update-notice.txt"
