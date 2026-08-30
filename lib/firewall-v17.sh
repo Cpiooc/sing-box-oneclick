@@ -64,3 +64,38 @@ singbox_outbound_for_key() {
     printf '%s\n' "$out"
   fi
 }
+
+# Make systemd resilience visible in `sb doctor`. The official sing-box unit
+# already provides Restart=on-failure; this check is deliberately read-only and
+# does not add a watchdog or automatically restart a healthy service.
+doctor_check_systemd_resilience() {
+  local enabled restart_policy restart_delay
+
+  enabled=$(systemctl is-enabled sing-box 2>/dev/null || true)
+  if [[ "$enabled" == "enabled" ]]; then
+    doctor_ok "sing-box 开机自启：enabled"
+  else
+    doctor_warn "sing-box 开机自启：${enabled:-unknown}；如需开启：systemctl enable sing-box"
+  fi
+
+  restart_policy=$(systemctl show sing-box -p Restart --value 2>/dev/null || true)
+  restart_delay=$(systemctl show sing-box -p RestartUSec --value 2>/dev/null || true)
+  [[ -n "$restart_delay" ]] || restart_delay="unknown"
+
+  if [[ "$restart_policy" == "on-failure" ]]; then
+    doctor_ok "sing-box 崩溃自动恢复：on-failure / ${restart_delay}"
+  else
+    doctor_warn "sing-box 崩溃自动恢复：${restart_policy:-unknown} / ${restart_delay}；建议运行 sb → 1 安装 / 修复 sing-box"
+  fi
+}
+
+# usability.sh owns the main doctor implementation and is loaded immediately
+# before this module. Inject the resilience check just before its PASS/WARN/FAIL
+# summary so these two checks are counted in the final result without copying
+# the entire doctor function into another module.
+if declare -F doctor >/dev/null 2>&1; then
+  _doctor_definition=$(declare -f doctor)
+  _doctor_definition=$(printf '%s\n' "$_doctor_definition" | sed '/^[[:space:]]*ui_rule[[:space:]]*$/i\    doctor_check_systemd_resilience')
+  eval "$_doctor_definition"
+  unset _doctor_definition
+fi
