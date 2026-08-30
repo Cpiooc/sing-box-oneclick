@@ -93,5 +93,43 @@ declare -F doctor >/dev/null
 declare -F backup_menu >/dev/null
 declare -F reveal_nodes >/dev/null
 declare -F firewall_setup_v17 >/dev/null
+declare -F doctor_check_systemd_resilience >/dev/null
+declare -f doctor | grep -q 'doctor_check_systemd_resilience'
 
-echo "Masking, redacted diff, backup retention and TCP+UDP UFW reconciliation passed."
+SYSTEMD_ENABLED=enabled
+SYSTEMD_RESTART=on-failure
+SYSTEMD_RESTART_USEC=10s
+systemctl() {
+  case "${1:-}" in
+    is-enabled)
+      printf '%s\n' "$SYSTEMD_ENABLED"
+      [[ "$SYSTEMD_ENABLED" == enabled ]]
+      ;;
+    show)
+      case "${3:-}" in
+        Restart) printf '%s\n' "$SYSTEMD_RESTART" ;;
+        RestartUSec) printf '%s\n' "$SYSTEMD_RESTART_USEC" ;;
+        *) return 1 ;;
+      esac
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+DOCTOR_OK=0; DOCTOR_WARN=0; DOCTOR_FAIL=0
+doctor_check_systemd_resilience > "$work/doctor-systemd-ok.txt"
+[[ "$DOCTOR_OK" -eq 2 ]]
+[[ "$DOCTOR_WARN" -eq 0 ]]
+grep -Fq 'sing-box 开机自启：enabled' "$work/doctor-systemd-ok.txt"
+grep -Fq 'sing-box 崩溃自动恢复：on-failure / 10s' "$work/doctor-systemd-ok.txt"
+
+SYSTEMD_ENABLED=disabled
+SYSTEMD_RESTART=no
+DOCTOR_OK=0; DOCTOR_WARN=0; DOCTOR_FAIL=0
+doctor_check_systemd_resilience > "$work/doctor-systemd-warn.txt"
+[[ "$DOCTOR_OK" -eq 0 ]]
+[[ "$DOCTOR_WARN" -eq 2 ]]
+grep -Fq 'systemctl enable sing-box' "$work/doctor-systemd-warn.txt"
+grep -Fq '安装 / 修复 sing-box' "$work/doctor-systemd-warn.txt"
+
+echo "Masking, redacted diff, backup retention, TCP+UDP UFW and doctor systemd resilience checks passed."
