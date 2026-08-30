@@ -80,6 +80,12 @@ jobs:
           sudo bash /tmp/install-sing-box.sh
           sing-box version
 
+      - name: Validate certificate pinning and client guidance
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/cert-pinning.sh
+
       - name: Validate representative server configs
         run: bash tests/validate-configs.sh
 

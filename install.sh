@@ -3,7 +3,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 077
 
-SCRIPT_VERSION="1.8.1"
+SCRIPT_VERSION="1.8.2"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
 REPO_API="https://api.github.com/repos/${REPO}"
@@ -55,6 +55,7 @@ MODULES=(
   "lib/usability.sh"
   "lib/firewall-v17.sh"
   "lib/menu.sh"
+  "lib/cert-pinning.sh"
 )
 
 _boot_info() { echo -e "${C_GREEN}[+]${C_RESET} $*"; }

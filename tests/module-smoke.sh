@@ -61,6 +61,7 @@ modules=(
   usability.sh
   firewall-v17.sh
   menu.sh
+  cert-pinning.sh
 )
 
 for module in "${modules[@]}"; do
@@ -87,6 +88,8 @@ required=(
   backup_now backup_menu backup_diff prune_backups restore_backup safe_update_singbox self_update
   firewall_setup_v17 reconcile_managed_ufw_rules
   hy2_port_hopping_menu hy2_hop_cli hy2_hop_status hy2_hop_apply_from_state
+  certificate_spki_sha256_base64 certificate_sha256_hex certificate_sha256_colon
+  cert_pinning_migrate_all cert_pinning_show_node_guidance cert_pinning_export_certificates
 )
 
 for fn in "${required[@]}"; do
@@ -109,6 +112,7 @@ done
 [[ "$(type -t deploy_shadowsocks)" == "function" ]]
 [[ "$(type -t hy2_port_hopping_menu)" == "function" ]]
 [[ "$(type -t manager_check_update)" == "function" ]]
+[[ "$(type -t cert_pinning_migrate_all)" == "function" ]]
 
 rm -rf "$APP_DIR"
-echo "All v1.8.1 modules loaded and required functions are present."
+echo "All v1.8.2 modules loaded and required functions are present."
