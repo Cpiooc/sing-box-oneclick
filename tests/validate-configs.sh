@@ -16,6 +16,7 @@ uuid=$(sing-box generate uuid)
 short_id=$(sing-box generate rand --hex 8)
 keypair=$(sing-box generate reality-keypair)
 private_key=$(awk '/PrivateKey/ {print $NF; exit}' <<< "$keypair" | tr -d '"')
+ss_key=$(sing-box generate rand --base64 16)
 
 jq -n \
   --arg uuid "$uuid" --arg private_key "$private_key" --arg short_id "$short_id" \
@@ -41,6 +42,21 @@ jq -n \
   --arg uuid "$uuid" --arg cert "$work/cert.pem" --arg key "$work/key.pem" \
   '{log:{level:"error"},inbounds:[{type:"tuic",tag:"tuic-in",listen:"::",listen_port:24446,users:[{name:"main",uuid:$uuid,password:"test-tuic-password"}],congestion_control:"bbr",auth_timeout:"3s",zero_rtt_handshake:false,heartbeat:"10s",tls:{enabled:true,server_name:"example.com",alpn:["h3"],certificate_path:$cert,key_path:$key}}],outbounds:[{type:"direct",tag:"direct"}]}' \
   > "$work/tuic.json"
+
+jq -n \
+  --arg cert "$work/cert.pem" --arg key "$work/key.pem" \
+  '{log:{level:"error"},inbounds:[{type:"anytls",tag:"anytls-in",listen:"::",listen_port:24448,users:[{name:"main",password:"test-anytls-password"}],tls:{enabled:true,server_name:"example.com",certificate_path:$cert,key_path:$key}}],outbounds:[{type:"direct",tag:"direct"}]}' \
+  > "$work/anytls.json"
+
+jq -n \
+  --arg cert "$work/cert.pem" --arg key "$work/key.pem" \
+  '{log:{level:"error"},inbounds:[{type:"trojan",tag:"trojan-in",listen:"::",listen_port:24449,users:[{name:"main",password:"test-trojan-password"}],tls:{enabled:true,server_name:"example.com",certificate_path:$cert,key_path:$key}}],outbounds:[{type:"direct",tag:"direct"}]}' \
+  > "$work/trojan.json"
+
+jq -n \
+  --arg password "$ss_key" \
+  '{log:{level:"error"},inbounds:[{type:"shadowsocks",tag:"shadowsocks-in",listen:"::",listen_port:24450,method:"2022-blake3-aes-128-gcm",password:$password}],outbounds:[{type:"direct",tag:"direct"}]}' \
+  > "$work/shadowsocks.json"
 
 for config in "$work"/*.json; do
   echo "==> sing-box check: $(basename "$config")"
