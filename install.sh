@@ -3,7 +3,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 umask 077
 
-SCRIPT_VERSION="1.8.0"
+SCRIPT_VERSION="1.8.1"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
 REPO_API="https://api.github.com/repos/${REPO}"

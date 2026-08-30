@@ -8,6 +8,7 @@ trap 'rm -rf "$work"' EXIT
 SCRIPT_VERSION="test"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
+REPO_API="https://api.github.com/repos/${REPO}"
 APP_DIR="$work/app"
 CONFIG_DIR="$work/sing-box"
 CONFIG_FILE="$CONFIG_DIR/config.json"
@@ -29,7 +30,7 @@ SUBSCRIPTION_USER="$(id -un)"
 HY2_HOP_UNIT="$APP_DIR/hy2-hop.service"
 C_RESET=''; C_RED=''; C_GREEN=''; C_YELLOW=''; C_BLUE=''; C_CYAN=''; C_BOLD=''; C_DIM=''; C_WHITE=''; C_MAGENTA=''; C_GRAY=''
 
-for module in common ui protocols tuic security maintenance tls-manager tls-safe runtime editor extra-protocols client-export client-extra hy2-hop subscription subscription-hooks views views-extra usability firewall-v17; do
+for module in common ui protocols tuic security maintenance tls-manager tls-safe runtime editor extra-protocols client-export client-extra hy2-hop subscription subscription-hooks views views-extra usability firewall-v17 menu; do
   # shellcheck source=/dev/null
   source "$root/lib/${module}.sh"
 done
@@ -94,7 +95,34 @@ declare -F backup_menu >/dev/null
 declare -F reveal_nodes >/dev/null
 declare -F firewall_setup_v17 >/dev/null
 declare -F doctor_check_systemd_resilience >/dev/null
+declare -F manager_check_update >/dev/null
+declare -F manager_update_notice >/dev/null
 [[ $(declare -f doctor) == *doctor_check_systemd_resilience* ]]
+[[ $(declare -f main) == *'update|self-update'* ]]
+
+local_commit=1111111111111111111111111111111111111111
+remote_commit=$local_commit
+printf '%s\n' "$local_commit" > "$MANAGER_DIR/COMMIT"
+manager_remote_commit_quick() { printf '%s' "$remote_commit"; }
+
+manager_check_update
+[[ "$MANAGER_UPDATE_STATE" == current ]]
+[[ "$MANAGER_LOCAL_COMMIT" == "$local_commit" ]]
+[[ "$MANAGER_REMOTE_COMMIT" == "$remote_commit" ]]
+[[ -z "$(manager_update_notice)" ]]
+
+remote_commit=2222222222222222222222222222222222222222
+manager_check_update
+[[ "$MANAGER_UPDATE_STATE" == available ]]
+manager_update_notice > "$work/update-notice.txt"
+grep -Fq '管理脚本有更新' "$work/update-notice.txt"
+grep -Fq '111111111111 → 222222222222' "$work/update-notice.txt"
+grep -Fq 'sb update' "$work/update-notice.txt"
+
+manager_remote_commit_quick() { return 1; }
+manager_check_update
+[[ "$MANAGER_UPDATE_STATE" == offline ]]
+[[ -z "$(manager_update_notice)" ]]
 
 SYSTEMD_ENABLED=enabled
 SYSTEMD_RESTART=on-failure
@@ -132,4 +160,4 @@ doctor_check_systemd_resilience > "$work/doctor-systemd-warn.txt"
 grep -Fq 'systemctl enable sing-box' "$work/doctor-systemd-warn.txt"
 grep -Fq '安装 / 修复 sing-box' "$work/doctor-systemd-warn.txt"
 
-echo "Masking, redacted diff, backup retention, TCP+UDP UFW and doctor systemd resilience checks passed."
+echo "Masking, redacted diff, backup retention, TCP+UDP UFW, update reminder and doctor systemd resilience checks passed."

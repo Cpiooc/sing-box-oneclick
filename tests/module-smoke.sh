@@ -6,6 +6,7 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 SCRIPT_VERSION="test"
 REPO="Cpiooc/sing-box-oneclick"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
+REPO_API="https://api.github.com/repos/${REPO}"
 APP_DIR="/tmp/sb-oneclick-test"
 CONFIG_DIR="${APP_DIR}/sing-box"
 CONFIG_FILE="${CONFIG_DIR}/config.json"
@@ -69,6 +70,7 @@ done
 
 required=(
   main menu ui_banner ui_dashboard ui_node_overview ui_cli_help ui_group ui_item ui_group_end
+  manager_local_commit manager_remote_commit_quick manager_check_update manager_update_notice
   deploy_reality deploy_hysteria2 deploy_tuic deploy_cloudflare_ws
   deploy_anytls deploy_trojan deploy_shadowsocks
   switch_certificate_tls select_certificate_mode
@@ -106,6 +108,7 @@ done
 [[ "$(type -t deploy_trojan)" == "function" ]]
 [[ "$(type -t deploy_shadowsocks)" == "function" ]]
 [[ "$(type -t hy2_port_hopping_menu)" == "function" ]]
+[[ "$(type -t manager_check_update)" == "function" ]]
 
 rm -rf "$APP_DIR"
-echo "All v1.8.0 modules loaded and required functions are present."
+echo "All v1.8.1 modules loaded and required functions are present."

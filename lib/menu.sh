@@ -1,6 +1,70 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 
+MANAGER_UPDATE_STATE="${MANAGER_UPDATE_STATE:-unchecked}"
+MANAGER_LOCAL_COMMIT="${MANAGER_LOCAL_COMMIT:-}"
+MANAGER_REMOTE_COMMIT="${MANAGER_REMOTE_COMMIT:-}"
+
+manager_local_commit() {
+  local ref
+  [[ -r "${MANAGER_DIR}/COMMIT" ]] || return 1
+  ref=$(tr -d '[:space:]' < "${MANAGER_DIR}/COMMIT")
+  [[ "$ref" =~ ^[0-9a-f]{40}$ ]] || return 1
+  printf '%s' "$ref"
+}
+
+manager_remote_commit_quick() {
+  local json sha
+  [[ "${SB_SKIP_UPDATE_CHECK:-0}" != 1 ]] || return 1
+  json=$(curl -fsSL --proto '=https' --tlsv1.2 \
+    --connect-timeout 1 --max-time 2 \
+    -H 'Accept: application/vnd.github+json' \
+    -H 'User-Agent: sing-box-oneclick' \
+    "${REPO_API}/commits/main" 2>/dev/null) || return 1
+  sha=$(grep -oE '"sha"[[:space:]]*:[[:space:]]*"[0-9a-f]{40}"' <<< "$json" | head -n1 | cut -d'"' -f4)
+  [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || return 1
+  printf '%s' "$sha"
+}
+
+manager_check_update() {
+  local local_commit remote_commit
+  MANAGER_UPDATE_STATE="offline"
+  MANAGER_LOCAL_COMMIT=""
+  MANAGER_REMOTE_COMMIT=""
+
+  local_commit=$(manager_local_commit 2>/dev/null || true)
+  remote_commit=$(manager_remote_commit_quick) || return 0
+
+  MANAGER_LOCAL_COMMIT="$local_commit"
+  MANAGER_REMOTE_COMMIT="$remote_commit"
+  if [[ -n "$local_commit" && "$local_commit" == "$remote_commit" ]]; then
+    MANAGER_UPDATE_STATE="current"
+  else
+    MANAGER_UPDATE_STATE="available"
+  fi
+}
+
+manager_update_notice() {
+  [[ "$MANAGER_UPDATE_STATE" == "available" ]] || return 0
+  local local_short="legacy" remote_short
+  [[ "$MANAGER_LOCAL_COMMIT" =~ ^[0-9a-f]{40}$ ]] && local_short=${MANAGER_LOCAL_COMMIT:0:12}
+  remote_short=${MANAGER_REMOTE_COMMIT:0:12}
+  echo
+  echo -e "  ${C_YELLOW}!${C_RESET} ${C_BOLD}管理脚本有更新${C_RESET}  ${C_DIM}${local_short} → ${remote_short}${C_RESET}"
+  echo -e "    ${C_DIM}选择 24 安全更新，或运行 sb update；只提醒，不会自动安装。${C_RESET}"
+}
+
+if declare -F ui_cli_help >/dev/null 2>&1; then
+  eval "$(declare -f ui_cli_help | sed '1s/ui_cli_help/ui_cli_help_pre_update_notice/')"
+fi
+
+ui_cli_help() {
+  if declare -F ui_cli_help_pre_update_notice >/dev/null 2>&1; then
+    ui_cli_help_pre_update_notice "$@"
+  fi
+  echo "  sb update          安全更新 sing-box-oneclick 管理脚本（手动确认）"
+}
+
 show_script_version() {
   ui_banner
   echo
@@ -17,10 +81,12 @@ show_script_version() {
 }
 
 menu() {
+  manager_check_update
   while true; do
     [[ -t 1 ]] && clear || true
     ui_banner
     ui_dashboard
+    manager_update_notice
     ui_rule
 
     ui_group "核心部署" "小白推荐：按提示一路使用默认值"
@@ -106,7 +172,7 @@ menu() {
       21) certificate_status; pause ;;
       22) renew_certificates; pause ;;
       23) core_menu; pause ;;
-      24) self_update; pause ;;
+      24) self_update; manager_check_update; pause ;;
       25) uninstall_all ;;
       26) switch_certificate_tls; pause ;;
       27) edit_node_parameters; pause ;;
@@ -157,6 +223,7 @@ main() {
     audit|check) security_audit ;;
     bbr) bbr_cli "${2:-menu}" ;;
     cert|certificate) certificate_status ;;
+    update|self-update) self_update ;;
     version|-v|--version) show_script_version ;;
     help|-h|--help) ui_cli_help ;;
     *)
