@@ -48,16 +48,22 @@ jobs:
           TERM: dumb
         run: bash tests/subscription-config.sh
 
-      - name: Print bundle SHA256
+      - name: Validate bundle SHA256
         run: |
-          sha256sum \
-            install.sh \
-            lib/common.sh lib/ui.sh lib/protocols.sh lib/tuic.sh \
-            lib/security.sh lib/maintenance.sh lib/tls-manager.sh lib/tls-safe.sh \
-            lib/runtime.sh lib/editor.sh lib/extra-protocols.sh \
-            lib/client-export.sh lib/client-extra.sh lib/hy2-hop.sh \
-            lib/subscription.sh lib/subscription-hooks.sh lib/views.sh lib/views-extra.sh \
-            lib/usability.sh lib/firewall-v17.sh lib/menu.sh VERSION
+          sha256sum -c SHA256SUMS
+          expected=$(awk '
+            /MODULES=\(/ {in_modules=1; next}
+            in_modules && /^\)/ {in_modules=0; next}
+            in_modules && /"lib\// {
+              line=$0
+              sub(/^[[:space:]]*"/, "", line)
+              sub(/"[[:space:]]*$/, "", line)
+              print line
+            }
+          ' install.sh)
+          for f in install.sh $expected VERSION; do
+            grep -Fq "  $f" SHA256SUMS || { echo "missing SHA256 entry: $f" >&2; exit 1; }
+          done
 
       - name: Install current stable sing-box
         run: |
