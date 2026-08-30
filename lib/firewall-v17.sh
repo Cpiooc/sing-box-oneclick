@@ -43,3 +43,24 @@ firewall_setup_v17() {
   firewall_setup
   reconcile_managed_ufw_rules
 }
+
+# Hysteria2 hopping uses `server_ports`, which conflicts with `server_port`
+# in sing-box. hy2-hop.sh starts from the normal single-port outbound and adds
+# server_ports; this final compatibility wrapper removes server_port only when
+# hopping is enabled. Keeping the fix in this late-loaded module also protects
+# future export extensions from accidentally reintroducing the conflict.
+if declare -F singbox_outbound_for_key >/dev/null 2>&1; then
+  eval "$(declare -f singbox_outbound_for_key | sed '1s/singbox_outbound_for_key/singbox_outbound_for_key_pre_v17_safe/')"
+fi
+
+singbox_outbound_for_key() {
+  local key=$1 out
+  out=$(singbox_outbound_for_key_pre_v17_safe "$@") || return $?
+  if [[ "$key" == hy2 ]] \
+      && declare -F hy2_hop_enabled >/dev/null 2>&1 \
+      && hy2_hop_enabled; then
+    jq 'del(.server_port)' <<< "$out"
+  else
+    printf '%s\n' "$out"
+  fi
+}
