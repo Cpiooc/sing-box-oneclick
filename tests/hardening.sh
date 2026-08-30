@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+
+SCRIPT_VERSION="test"
+REPO="Cpiooc/sing-box-oneclick"
+RAW_BASE="https://raw.githubusercontent.com/${REPO}/main"
+APP_DIR="$work/app"
+CONFIG_DIR="$work/sing-box"
+CONFIG_FILE="$CONFIG_DIR/config.json"
+STATE_FILE="$APP_DIR/state.json"
+BACKUP_DIR="$APP_DIR/backups"
+NODE_INFO="$work/node-info.txt"
+MANAGER_DIR="$work/manager"
+MANAGER_FILE="$MANAGER_DIR/install.sh"
+MANAGER_LINK="$work/sb"
+BBR_SYSCTL="$work/bbr.conf"
+FAIL2BAN_JAIL="$work/fail2ban.conf"
+CERTBOT_HOOK="$work/certbot-hook.sh"
+SUBSCRIPTION_CONFIG="$APP_DIR/subscription-nginx.conf"
+SUBSCRIPTION_UNIT="$APP_DIR/subscription.service"
+SUBSCRIPTION_PUBLISH_DIR="$APP_DIR/subscription-publish"
+SUBSCRIPTION_RUNTIME_DIR="$APP_DIR/subscription-run"
+SUBSCRIPTION_CERTBOT_HOOK="$APP_DIR/subscription-certbot-hook.sh"
+SUBSCRIPTION_USER="$(id -un)"
+HY2_HOP_UNIT="$APP_DIR/hy2-hop.service"
+C_RESET=''; C_RED=''; C_GREEN=''; C_YELLOW=''; C_BLUE=''; C_CYAN=''; C_BOLD=''; C_DIM=''; C_WHITE=''; C_MAGENTA=''; C_GRAY=''
+
+for module in common ui protocols tuic security maintenance tls-manager tls-safe runtime editor extra-protocols client-export client-extra hy2-hop subscription subscription-hooks views views-extra usability firewall-v17; do
+  # shellcheck source=/dev/null
+  source "$root/lib/${module}.sh"
+done
+
+mkdir -p "$APP_DIR" "$CONFIG_DIR" "$BACKUP_DIR" "$MANAGER_DIR"
+cat > "$STATE_FILE" <<'JSON'
+{
+  "version": 1,
+  "nodes": {
+    "ss": {
+      "name": "sing-box-Shadowsocks",
+      "type": "Shadowsocks",
+      "address": "ss.example.com",
+      "port": 8388,
+      "method": "2022-blake3-aes-128-gcm",
+      "password": "very-secret-password",
+      "uri": "ss://very-secret",
+      "firewall": "both",
+      "tls_enabled": false,
+      "certificate": false
+    }
+  }
+}
+JSON
+chmod 600 "$STATE_FILE"
+
+masked=$(mask_secret 'abcdefghijklmnop')
+[[ "$masked" != 'abcdefghijklmnop' ]]
+[[ "$masked" == abcd*mnop ]]
+
+cat > "$work/redact.json" <<'JSON'
+{"uuid":"1234","password":"secret","uri":"scheme://secret","nested":{"token":"abc","safe":"ok"}}
+JSON
+redacted=$(redact_json_for_diff "$work/redact.json")
+[[ $(jq -r '.uuid' <<< "$redacted") == '***REDACTED***' ]]
+[[ $(jq -r '.password' <<< "$redacted") == '***REDACTED***' ]]
+[[ $(jq -r '.uri' <<< "$redacted") == '***REDACTED***' ]]
+[[ $(jq -r '.nested.token' <<< "$redacted") == '***REDACTED***' ]]
+[[ $(jq -r '.nested.safe' <<< "$redacted") == 'ok' ]]
+
+for i in $(seq -w 1 35); do
+  mkdir -p "$BACKUP_DIR/20260101-0000${i}"
+done
+BACKUP_KEEP_COUNT=30
+prune_backups true
+[[ $(find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l) -eq 30 ]]
+
+ufw_log="$work/ufw.log"
+ufw() {
+  if [[ ${1:-} == status ]]; then
+    echo 'Status: active'
+    return 0
+  fi
+  printf '%s\n' "$*" >> "$ufw_log"
+}
+reconcile_managed_ufw_rules
+grep -Fxq 'allow 8388/tcp' "$ufw_log"
+grep -Fxq 'allow 8388/udp' "$ufw_log"
+
+declare -F doctor >/dev/null
+declare -F backup_menu >/dev/null
+declare -F reveal_nodes >/dev/null
+declare -F firewall_setup_v17 >/dev/null
+
+echo "Masking, redacted diff, backup retention and TCP+UDP UFW reconciliation passed."
