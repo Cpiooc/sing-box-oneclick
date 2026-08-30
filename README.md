@@ -2,12 +2,12 @@
 
 # sing-box oneclick
 
-**安全 · 多协议 · 可回滚 · 可原地维护的 sing-box VPS 管理器**
+**给小白也能放心用的 sing-box VPS 管理器**
 
-一条命令部署，之后只需要 `sb`。
+安全 · 多协议 · 可回滚 · 默认隐藏秘密 · 本地优先
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-v1.6.0-2563eb?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-v1.7.0-2563eb?style=flat-square">
   <img alt="CI" src="https://github.com/Cpiooc/sing-box-oneclick/actions/workflows/ci.yml/badge.svg">
   <img alt="Shell" src="https://img.shields.io/badge/shell-bash-4EAA25?style=flat-square&logo=gnubash&logoColor=white">
   <img alt="Debian" src="https://img.shields.io/badge/Debian-11%20%7C%2012%20%7C%2013-A81D33?style=flat-square&logo=debian&logoColor=white">
@@ -16,34 +16,33 @@
 
 `Reality` · `Hysteria2` · `TUIC v5` · `Cloudflare WS` · `AnyTLS` · `Trojan` · `Shadowsocks 2022`
 
-`Client Export` · `HTTPS Subscription` · `ACME` · `Rollback` · `BBR` · `UFW` · `Fail2ban`
+`sb doctor` · `HTTPS Subscription` · `Client Export` · `Atomic Update` · `Rollback` · `BBR` · `UFW`
 
 </div>
 
 ---
 
 > [!NOTE]
-> **项目定位**：不追求“协议越多越好”，而是在常用协议覆盖足够以后，把重点放在 **配置校验、事务式变更、失败回滚、本地客户端导出、安全私有订阅和长期维护体验**。
+> **项目定位**：功能够用以后，优先把“安装简单、提示清楚、失败能回滚、秘密不乱显示、长期维护省心”做好。普通用户不需要理解所有高级选项，看到推荐默认值时直接按 **Enter** 即可。
 
-## ✨ v1.6 一览
+## ✨ v1.7 重点
 
 | 能力 | 说明 |
 |---|---|
-| 🚀 **一键部署** | 首次安装后永久使用 `sb` 管理 |
-| 🌐 **7 类入口协议** | Reality / HY2 / TUIC / CF-WS / AnyTLS / Trojan / Shadowsocks |
-| ✏️ **原地修改** | 修改端口、SNI、Path、密码、UUID、SS Cipher、TUIC 拥塞控制等，无需整节点重建 |
-| 📦 **客户端导出** | 本机生成 sing-box / Mihomo / v2rayN 配置和订阅内容 |
-| 🔒 **HTTPS 私有订阅** | HTTPS only + 256-bit Token + 可轮换 + 可一键停用 |
-| 🔐 **统一证书管理** | ACME / 自签证书 / 导入 PEM；TLS 节点统一查看和切换 |
-| ♻️ **安全变更链** | `sing-box check` → 备份 → 应用 → reload/restart → 健康检查 → 自动回滚 |
-| ⚡ **热重载优先** | 优先 SIGHUP，失败自动退回 restart |
-| 🛡️ **系统防护** | UFW / Fail2ban / unattended-upgrades / Cloudflare 源站限制 |
-| 📈 **网络优化** | TCP BBR + fq 检测、启用和验证，不盲目换内核 |
-| ✅ **CI 验证** | 服务端配置、客户端配置、模块加载、编辑流程、HTTPS Nginx 配置持续测试 |
+| 🧭 **小白友好流程** | 推荐值明确标出；域名自动推荐 ACME，IP 自动推荐自签；高级功能不塞进首次部署 |
+| 🙈 **秘密默认打码** | `sb nodes` 默认隐藏 UUID、密码、密钥和完整分享 URI；`sb reveal` 才显示完整凭据 |
+| 🩺 **`sb doctor`** | 一键检查服务、配置、State 漂移、证书、权限、UFW、订阅、HY2 跳跃、SHA256 等 |
+| ♻️ **自动备份治理** | 默认只保留最近 30 个备份；支持脱敏 Diff，比较时不把密码/UUID/Token 打到终端 |
+| 📦 **原子管理器更新** | 锁定同一个 Git commit → 下载整包 → SHA256 校验 → Bash 检查 → 版本目录 → symlink 原子切换 |
+| 🧱 **SS UFW 双协议修复** | `firewall: both` 会统一按 TCP + UDP 处理，不再依赖单协议分支 |
+| 🦘 **HY2 端口跳跃** | 高级可选、默认关闭；支持 sing-box / Mihomo / URI 导出同步 |
+| 🔒 **HTTPS 私有订阅** | HTTPS only + 256-bit Token + no-store + 可轮换 + 可停用 |
+| ✏️ **原地修改** | 端口、SNI、Path、密码、UUID、SS Cipher、TUIC 拥塞控制等无需整节点重建 |
+| ✅ **持续验证** | 7 协议服务端、客户端导出、编辑、HTTPS、hardening、HY2 hopping、SHA256 清单全部进 CI |
 
 ---
 
-## 🚀 快速开始
+## 🚀 30 秒开始
 
 ### 一条命令安装
 
@@ -51,201 +50,358 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/Cpiooc/sing-box-oneclick/main/install.sh)
 ```
 
-安装后：
+安装后以后只需要：
 
 ```bash
 sb
 ```
+
+### 小白怎么选？
+
+大多数页面都遵循这三个规则：
+
+```text
+1. 必须由你提供的东西才会问，例如：节点域名 / IP
+2. 已有安全推荐值的选项直接按 Enter
+3. 高级功能默认关闭，真正需要时再单独打开
+```
+
+例如 TLS：
+
+```text
+◆ TLS 证书
+• 检测到域名 node.example.com。新手直接按 Enter，自动申请 Let's Encrypt 即可。
+
+  1  自动申请 Let's Encrypt   · 有域名时推荐 · 自动续期
+  2  自动生成自签证书         · 无域名也能用
+  3  导入已有 PEM             · 高级用户
+
+  请选择 [1] ›
+```
+
+如果填写的是 IP，脚本会改为默认推荐自签证书，并明确提示客户端需要允许不安全证书。
+
+> [!IMPORTANT]
+> 脚本需要 `root`。VPS 厂商的 Security Group / 云防火墙不由脚本控制；对应端口仍要在厂商控制台放行。
 
 ### 从旧版本升级
 
+旧版用户：
+
 ```text
-sb → 24. 更新本管理脚本
+sb → 24. 安全更新本管理脚本
 ```
 
-升级完成后退出，再重新执行：
+更新后**退出一次，再重新运行**：
 
 ```bash
 sb
 ```
 
-> [!TIP]
-> 从旧版本跨越新增模块版本升级时，第一次更新后重新运行一次 `sb`，管理器会自动补齐缺失模块。
-
-### 更谨慎的安装方式
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/Cpiooc/sing-box-oneclick/main/install.sh -o install.sh
-bash -n install.sh
-less install.sh
-sudo bash install.sh
-```
-
-> [!IMPORTANT]
-> 需要 `root` 权限。云厂商 Security Group / 云防火墙不由脚本控制，使用的 TCP / UDP 端口仍需要在厂商控制台放行。
+跨越新增模块的大版本时，第二次运行会自动补齐完整校验整包。也可以直接重新执行上面的一键安装命令，现有 sing-box 节点配置不会因此被清空。
 
 ---
 
-## 🖥️ 新版终端控制台
+## 🖥️ v1.7 控制台
 
 ```text
 ╭──────────────────────────────────────────────────────────────────╮
-│  SING-BOX ONECLICK                                      v1.6.0  │
+│  SING-BOX ONECLICK                                      v1.7.0  │
 │  Secure Gateway Manager · safe changes · local-first           │
 ╰──────────────────────────────────────────────────────────────────╯
 
   CORE  ● sing-box active  v1.x.x     ● BBR ON
-  NET   ● IPv4 ON        ● IPv6 ON        ◆ Nodes 7
-  SUB   ● Private HTTPS  TCP/9443
+  NET   ● IPv4 ON          ● IPv6 ON      ◆ Nodes 4
+  SUB   ● Private HTTPS    TCP/9443
   ───────────────────────────────────────────────────────────
 
-  ┌─ 核心部署  推荐主力入口
-  │  1  安装 / 修复 sing-box             · 官方稳定版
-  │  2  VLESS + Reality                  · TCP · Vision
-  │  3  Hysteria2                        · UDP · QUIC
-  │  4  Reality + Hysteria2              · TCP/UDP 双 443
-  │  5  Cloudflare VLESS WS              · TCP · TLS 可选
-  │  6  TUIC v5                          · UDP · QUIC
+  ┌─ 核心部署  小白推荐：按提示一路使用默认值
+  │  1  安装 / 修复 sing-box     · 官方稳定版
+  │  2  VLESS + Reality          · TCP · Vision · 主力推荐
+  │  3  Hysteria2                · UDP · QUIC · 主力推荐
+  │  4  Reality + Hysteria2      · TCP/UDP 双 443
+  │  5  Cloudflare VLESS WS      · TCP · TLS 可选
+  │  6  TUIC v5                  · UDP · QUIC
   └────────────────────────────────────────────────────────────
 
-  ┌─ 兼容协议  v1.6 新增
-  │ 30  AnyTLS                            · TCP · TLS
-  │ 31  Trojan                            · TCP · TLS
-  │ 32  Shadowsocks                       · TCP+UDP · 2022 BLAKE3
+  ┌─ 节点与订阅  敏感信息默认隐藏
+  │  7  查看节点安全视图         · UUID / 密码 / URI 打码
+  │  8  显示节点二维码           · 包含完整凭据
+  │ 36  显示完整节点凭据         · 敏感操作
+  │ 29  安全 HTTPS 在线订阅
+  │ 33  HY2 端口跳跃             · 高级 · 默认关闭
+  └────────────────────────────────────────────────────────────
+
+  ┌─ 运行与诊断  出问题先跑 doctor
+  │ 34  一键体检 sb doctor       · 只检查，不自动改配置
+  │ 10  sing-box 状态 / 配置校验
+  │ 11  查看日志
+  │ 12  网络诊断
   └────────────────────────────────────────────────────────────
 ```
 
-功能增多后仍保持分组，避免把几十个操作平铺在一个列表里。
-
-### 常用快捷命令
-
-```bash
-sb status        # 服务状态 + 配置校验
-sb nodes         # 节点卡片 + 分享链接
-sb edit          # 原地修改节点参数
-sb export        # 本地生成客户端配置
-sb sub           # HTTPS 私有订阅
-sb anytls        # 部署 / 重建 AnyTLS
-sb trojan        # 部署 / 重建 Trojan
-sb ss            # 部署 / 重建 Shadowsocks
-sb qr            # 二维码
-sb logs          # 日志
-sb audit         # 安全自检
-sb cert          # 证书状态
-sb bbr           # BBR 状态
-```
+功能多，但普通用户常用的入口仍然集中在顶部。
 
 ---
 
 ## 🌐 协议矩阵
 
-| 协议 | 传输 | 默认 / 推荐端口 | TLS | Cloudflare 普通橙云 | 定位 |
-|---|---|---:|---|---|---|
-| **VLESS + Reality + Vision** | TCP | `443/TCP` | Reality | ❌ | 主力 TCP |
-| **Hysteria2 + Salamander** | QUIC / UDP | `443/UDP` | 必需 | ❌ | 主力 UDP |
-| **TUIC v5** | QUIC / UDP | `8443/UDP` | 必需 | ❌ | UDP 备用 |
-| **VLESS + WebSocket** | TCP | `8443/TCP` | 可选 | ✅ | CDN 入口 |
-| **AnyTLS** | TCP | `443` / `8444` | 必需 | ❌ | TLS TCP 备用 |
-| **Trojan** | TCP | `443` / `8445` | 必需 | ❌ | 高兼容 TLS TCP |
-| **Shadowsocks** | TCP + UDP | `8388` | 无普通 TLS 层 | ❌ | 兼容 / 备用入口 |
+| 协议 | 传输 | 推荐端口 | TLS | 用途 |
+|---|---|---:|---|---|
+| **VLESS + Reality + Vision** | TCP | `443/TCP` | Reality | 主力 TCP |
+| **Hysteria2 + Salamander** | QUIC / UDP | `443/UDP` | 必需 | 主力 UDP |
+| **TUIC v5** | QUIC / UDP | `8443/UDP` | 必需 | UDP 备用 |
+| **Cloudflare VLESS WS** | TCP | `8443/TCP` | 可选 | CDN 入口 |
+| **AnyTLS** | TCP | `443` / `8444` | 必需 | TLS TCP 备用 |
+| **Trojan** | TCP | `443` / `8445` | 必需 | 高兼容 TLS TCP |
+| **Shadowsocks 2022** | TCP + UDP | `8388` | 无普通 TLS | 兼容 / 备用 |
 
-> [!NOTE]
-> `443/TCP` 和 `443/UDP` 属于不同监听空间，因此 Reality 与 Hysteria2 可以同时使用 443。新增 AnyTLS / Trojan 如果发现 TCP/443 已占用，会自动给出其他默认端口。
-
-### 推荐布局
-
-如果追求简单，不需要把 7 种协议全部部署。常见主力布局仍然是：
+最简单的主力布局仍然是：
 
 ```text
-443/TCP   ── VLESS Reality
+443/TCP   ── Reality
 443/UDP   ── Hysteria2
-8443/TCP  ── Cloudflare VLESS WS
-8443/UDP  ── TUIC v5
+8443/TCP  ── Cloudflare WS
+8443/UDP  ── TUIC
 ```
 
-AnyTLS / Trojan / Shadowsocks 更适合作为额外兼容或备用入口。
+不需要为了“协议齐全”把 7 种全部部署。
 
 ---
 
-## 🆕 AnyTLS
+## 🙈 节点秘密默认打码
 
-AnyTLS 使用 sing-box 原生实现，要求 **sing-box >= 1.12.0**。
+日常查看：
 
 ```bash
-sb anytls
+sb nodes
 ```
 
-或菜单：
+显示类似：
 
 ```text
-30  AnyTLS
+╭────────────────────────────────────────────────────────────╮
+│ ● sing-box-Hysteria2  [hy2]
+│ Hysteria2
+│ 入口  hy2.example.com:443  UDP
+│ SNI   hy2.example.com · QUIC + Salamander
+│ 密码  7a1f••••••••d891
+│ 分享链接已隐藏 · 使用 sb qr 扫码，或 sb reveal 显示完整凭据
+╰────────────────────────────────────────────────────────────╯
 ```
 
-特点：
+需要复制完整链接时才运行：
 
-- 原生 TCP + TLS；
-- 支持 ACME、自签、导入 PEM；
-- 自动生成随机密码；
-- 支持 `sb edit` 修改地址、端口、密码、证书；
-- 自动进入 sing-box / Mihomo / v2rayN / HTTPS 私有订阅导出链路；
-- 不把 AnyTLS 和 Reality 强行组合，保持客户端兼容性和配置清晰度。
+```bash
+sb reveal
+```
+
+二维码同样包含完整凭据，因此：
+
+```bash
+sb qr
+```
+
+会先显示安全提醒。
+
+> [!WARNING]
+> 完整节点 URI、二维码和 HTTPS 订阅 URL 都属于凭据。不要公开截图、贴到 Issue/论坛，也不要发送给第三方订阅转换网站。
 
 ---
 
-## 🆕 Trojan
+## 🩺 `sb doctor` 一键体检
+
+遇到“突然连不上 / 改完配置不确定对不对 / 升级后想确认状态”，先运行：
 
 ```bash
-sb trojan
+sb doctor
 ```
 
-或菜单：
+它**只检查，不会擅自重启服务或修改配置**。
+
+检查内容包括：
 
 ```text
-31  Trojan
+✓ root / Debian / Ubuntu
+✓ 基础依赖
+✓ sing-box 安装、版本、active 状态
+✓ sing-box check
+✓ state.json 结构
+✓ config / state / node-info 权限
+✓ State 与配置中的监听端口是否漂移
+✓ TLS 证书文件和到期时间
+✓ UFW 基础端口
+✓ NTP 时间同步
+✓ HTTPS 私有订阅服务
+✓ HY2 端口跳跃重定向规则
+✓ 备份数量
+✓ 管理器 SHA256SUMS
 ```
 
-默认使用原生 Trojan + TLS，不默认开放 HTTP fallback。
+最后给出：
+
+```text
+PASS 18   WARN 1   FAIL 0
+```
+
+`FAIL` 优先处理；`WARN` 很多时候只是可选安全项或环境提示。
+
+---
+
+## ♻️ 自动备份 + 安全 Diff
+
+```bash
+sb backup
+```
+
+默认：
+
+- 每次关键配置变更前自动备份；
+- 只保留最近 **30** 个，防止长期堆积；
+- 可立即备份、恢复、清理；
+- 可以比较任意两个备份。
+
+Diff 前会自动把这些内容打码：
+
+```text
+password
+uuid
+private_key
+public_key
+short_id
+token
+uri
+```
+
+所以你能看到：
+
+```diff
+- "listen_port": 443
++ "listen_port": 8443
+```
+
+但不会把真实密码顺便打进 SSH 终端历史/截图。
+
+---
+
+## 📦 原子版本更新 + SHA256
+
+v1.7 不再从 `main` 一边变化一边逐个拼模块。
+
+更新流程：
+
+```text
+读取 GitHub main
+      ↓
+锁定一个 40 位 commit SHA
+      ↓
+所有文件只从该 commit 下载
+      ↓
+逐文件 SHA256SUMS 校验
+      ↓
+Bash 语法检查
+      ↓
+写入独立版本目录
+      ↓
+symlink 原子切换当前管理器
+```
+
+入口：
+
+```text
+sb → 24. 安全更新本管理脚本
+```
+
+或在控制台看到：
+
+```text
+当前版本   v1.7.0
+远端版本   v1.7.x
+锁定提交   0123456789ab
+```
+
+历史管理器版本目录会保留少量最近版本，避免每次更新都覆盖唯一副本。
 
 > [!NOTE]
-> sing-box 官方文档指出，没有证据表明必须依赖 HTTP fallback 来抵抗检测，而额外开放标准 HTTP/S 服务本身也可能增加特征。因此本项目保持最小配置，需要 fallback 的高级用户可自行扩展。
+> SHA256 可以防止下载损坏、文件混装和与仓库清单不一致；它不是代码签名本身。仓库账号和 GitHub 仍属于信任链的一部分。
 
 ---
 
-## 🆕 Shadowsocks
+## 🧱 UFW：Shadowsocks TCP + UDP
+
+Shadowsocks 状态使用：
+
+```text
+firewall = both
+```
+
+v1.7 的 UFW 收敛层原生识别：
+
+```text
+tcp   → TCP
+udp   → UDP
+both  → TCP + UDP
+```
+
+因此无论是“先开 UFW 后部署 SS”，还是“先部署 SS 再初始化 UFW”，都会明确补齐：
+
+```text
+8388/tcp
+8388/udp
+```
+
+Cloudflare WS 的源站限制仍保持独立逻辑，不会因为统一收敛而被重新放成全网可访问。
+
+---
+
+## 🦘 Hysteria2 端口跳跃
+
+默认：**关闭**。
 
 ```bash
-sb ss
+sb hy2-hop
 ```
 
-或菜单：
+适合这种症状：
 
 ```text
-32  Shadowsocks
+HY2 刚开始正常
+      ↓
+持续使用某个 UDP 端口后被限速 / 阻断
+      ↓
+手工换一个 UDP 端口又恢复
 ```
 
-默认同时启用 TCP + UDP，并优先提供现代 Shadowsocks 2022 方法：
+如果运营商限制的是**整个 UDP**，端口跳跃不会解决问题。
+
+推荐默认设置：
 
 ```text
-2022-blake3-aes-128-gcm       推荐
-2022-blake3-aes-256-gcm
-2022-blake3-chacha20-poly1305
-chacha20-ietf-poly1305        兼容
-AES-256-GCM                    兼容
+范围       UDP/20000-30000
+跳跃间隔   30 秒
+实际 HY2   UDP/443（或你当前端口）
 ```
 
-对于 Shadowsocks 2022，脚本会按对应 key length 自动生成 Base64 密钥；分享链接按 SIP002 / SIP022 要求生成。
+服务器会使用 Linux nftables（没有时可回退 iptables）把跳跃范围重定向到实际 HY2 监听端口；客户端导出同步更新：
+
+```text
+sing-box  → server_ports + hop_interval
+Mihomo    → ports + hop-interval
+URI       → Hysteria2 multi-port 地址
+```
+
+> [!IMPORTANT]
+> 开启后必须在 VPS 厂商 **Security Group / 云防火墙** 放行对应 UDP 范围。范围越大暴露面越大，因此脚本限制单次范围最多 20,000 个端口，并且此功能不会在首次部署中自动开启。
 
 ---
 
-## ✏️ 节点参数原地修改
+## ✏️ 原地修改节点
 
 ```bash
 sb edit
 ```
 
-支持的主要字段：
-
-| 协议 | 可原地修改 |
+| 协议 | 可修改 |
 |---|---|
 | Reality | 地址、端口、SNI、UUID、Short ID |
 | Hysteria2 | 地址、端口、密码、Salamander、伪装站、证书 |
@@ -255,38 +411,37 @@ sb edit
 | Trojan | 地址、端口、密码、TLS / 证书 |
 | Shadowsocks | 地址、TCP+UDP 端口、密钥、Cipher |
 
-所有服务端配置修改仍走：
+服务端配置变更始终走：
 
 ```text
-读取当前配置
-      ↓
-生成 candidate
-      ↓
+candidate
+   ↓
 sing-box check
-      ↓
-创建备份
-      ↓
+   ↓
+backup
+   ↓
 原子替换
-      ↓
+   ↓
 优先 reload / restart 兜底
-      ↓
-服务健康检查
-      ↓
+   ↓
+active 检查
+   ↓
 失败自动回滚
 ```
 
-> [!WARNING]
-> 修改密码、UUID、SS Cipher 等认证参数后，客户端旧配置自然会失效。已启用本地导出 / HTTPS 订阅时，脚本会尽量自动刷新导出内容。
+热重载优先用于减少进程级重启，但 sing-box 重新加载配置时仍可能重置部分现有连接，因此项目不会宣传“绝对零中断”。
 
 ---
 
-## 📦 本地客户端导出
+## 📱 客户端导出 / HTTPS 私有订阅
+
+本地生成：
 
 ```bash
 sb export
 ```
 
-目录：
+输出：
 
 ```text
 /etc/sing-box-oneclick/exports/
@@ -297,22 +452,15 @@ sb export
 └── README.txt
 ```
 
-特点：
+不会调用第三方订阅转换网站。
 
-- 不调用第三方订阅转换站；
-- 7 种协议统一进入导出流程；
-- 生成文件权限 `600`，目录权限 `700`；
-- sing-box 客户端 JSON 会在服务器有 sing-box 时自动执行 `sing-box check`。
-
----
-
-## 🔒 HTTPS 私有订阅
+多设备自动更新：
 
 ```bash
 sb sub
 ```
 
-在线订阅继续使用独立低权限 Nginx 实例，不接管系统已有站点。
+提供：
 
 ```text
 https://sub.example.com:9443/<64位随机Token>/sing-box
@@ -321,153 +469,159 @@ https://sub.example.com:9443/<64位随机Token>/v2rayn
 https://sub.example.com:9443/<64位随机Token>/raw
 ```
 
-安全策略：
-
-- HTTPS only；
-- 256-bit 随机 Token；
-- 精确路径匹配；
-- `Cache-Control: no-store`；
-- Token 可一键轮换；
-- 可一键停用并删除发布副本；
-- access log 默认关闭，降低 Token 写入日志的风险；
-- Cloudflare 模式可把源站 UFW 收紧到官方 Cloudflare IP 段。
-
-> [!WARNING]
-> **完整订阅 URL 本身就是秘密。** 谁得到 URL，谁就能取得节点 UUID / 密码 / Reality 参数。不要把完整地址放进 GitHub issue、论坛、截图或第三方转换网站。
+安全策略包括 HTTPS only、256-bit Token、精确路径、`no-store`、Token 轮换、一键停用、低权限独立 Nginx、默认关闭 access log。
 
 ---
 
 ## 🔐 TLS / 证书
 
-需要普通 TLS 的节点支持：
+普通 TLS 节点支持：
 
 ```text
-1. Let's Encrypt / ACME
-2. 自签证书
-3. 导入现有 PEM 证书 + 私钥
+1  Let's Encrypt / ACME    有域名推荐
+2  自签证书                IP / 临时使用
+3  导入已有 PEM            高级
 ```
 
-适用：
+Reality 使用自己的 Reality 密钥体系；Shadowsocks 没有普通 TLS 证书层；WS 可以关闭 TLS。
 
-```text
-Hysteria2
-TUIC v5
-Cloudflare WS（可关闭 TLS）
-AnyTLS
-Trojan
-HTTPS 私有订阅
-```
-
-Reality 使用自己的 Reality 密钥体系；Shadowsocks 不使用普通 TLS 证书层。
+Certbot 自动续期 hook 优先 reload sing-box，失败才 restart。
 
 ---
 
-## 🛡️ 默认安全策略
-
-### 会做
-
-- 配置写入前 `sing-box check`；
-- 修改前备份；
-- 失败自动回滚；
-- 敏感状态文件 `600`；
-- UFW 保留 SSH 端口；
-- Fail2ban SSH 防护；
-- unattended-upgrades；
-- TCP BBR + fq 检测；
-- 自签 / PEM 证书配对验证；
-- HTTPS 订阅 Token 轮换与日志泄漏收敛。
-
-### 不会默认做
-
-- ❌ 强制修改 SSH 端口；
-- ❌ 禁止 root 登录导致管理员失联；
-- ❌ 自动换第三方内核；
-- ❌ watchdog 定时强制重启 sing-box；
-- ❌ 把节点交给第三方订阅转换网站；
-- ❌ 默认加入 WARP / Psiphon / Argo 等额外网络层。
-
----
-
-## ⚡ BBR
+## ⚡ BBR 与系统安全
 
 ```bash
 sb bbr
 ```
 
-Linux TCP BBR 只影响 TCP：Reality、WS、AnyTLS、Trojan、Shadowsocks TCP 流量可以受益。
-
-HY2 / TUIC 使用 QUIC / UDP，不使用 Linux TCP BBR；TUIC 自己的 `congestion_control=bbr` 是另一套机制。
-
----
-
-## 🧪 CI
-
-GitHub Actions 当前覆盖：
+只在当前内核支持 BBR 时启用：
 
 ```text
-✓ Bash syntax
-✓ 模块完整加载
-✓ HTTPS 私有订阅 Nginx 安全配置
-✓ Reality 服务端配置
-✓ Hysteria2 服务端配置
-✓ TUIC 服务端配置
-✓ VLESS WS TLS / no-TLS 配置
-✓ AnyTLS 服务端配置
-✓ Trojan 服务端配置
-✓ Shadowsocks 2022 服务端配置
-✓ 原地修改回归测试
-✓ 7 协议 sing-box 客户端导出
-✓ Mihomo / URI 订阅导出结构
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
 ```
 
-CI 能降低脚本更新引入配置错误的风险，但不能代替真实 VPS 上的云防火墙、DNS、ACME、运营商网络和 Cloudflare 全链路测试。
+不会为了 BBR 自动换内核或重启 VPS。
+
+另外支持：
+
+- UFW，保留检测到的 SSH 端口；
+- Fail2ban SSH 防护；
+- unattended-upgrades；
+- 不默认关闭 root、不强改 SSH 端口、不自动禁用密码登录；
+- 不安装会主动重启 sing-box 的 watchdog。
 
 ---
 
-## 📂 项目结构
+## ⌨️ 常用快捷命令
+
+```bash
+sb                 # 控制台
+sb doctor          # 一键体检
+sb status          # sing-box 状态
+sb nodes           # 节点安全视图（打码）
+sb reveal          # 完整节点凭据（敏感）
+sb qr              # 二维码（敏感）
+sb edit            # 原地修改
+sb export          # 本地客户端导出
+sb sub             # HTTPS 私有订阅
+sb backup          # 备份 / Diff / 清理
+sb hy2-hop         # HY2 端口跳跃，高级、默认关闭
+sb anytls          # AnyTLS
+sb trojan          # Trojan
+sb ss              # Shadowsocks
+sb logs            # 日志
+sb audit           # 完整安全自检
+sb cert            # 证书
+sb bbr             # BBR
+sb version         # 版本 / commit
+sb help            # 帮助
+```
+
+---
+
+## ✅ CI
+
+每次提交持续验证：
+
+```text
+Bash syntax
+Module integration smoke
+Novice safety / masking / backup retention / UFW both
+HY2 port hopping exports
+HTTPS subscription Nginx hardening
+SHA256SUMS bundle integrity
+Current stable sing-box install
+7-protocol representative server configs
+AnyTLS / Trojan / Shadowsocks regressions
+In-place editing
+Generated sing-box / Mihomo / v2rayN configs
+```
+
+这些测试不能替代真实 VPS 的 ACME、云安全组、UFW/systemd 全链路测试，但能尽量把配置结构和脚本回归挡在发布前。
+
+---
+
+## 📁 项目结构
 
 ```text
 sing-box-oneclick/
 ├── install.sh
 ├── VERSION
-├── README.md
-├── SECURITY.md
+├── SHA256SUMS
 ├── lib/
 │   ├── common.sh
 │   ├── ui.sh
 │   ├── protocols.sh
 │   ├── tuic.sh
-│   ├── tls-manager.sh
-│   ├── runtime.sh
-│   ├── editor.sh
 │   ├── extra-protocols.sh
+│   ├── editor.sh
 │   ├── client-export.sh
 │   ├── client-extra.sh
+│   ├── hy2-hop.sh
 │   ├── subscription.sh
 │   ├── subscription-hooks.sh
+│   ├── tls-manager.sh
+│   ├── tls-safe.sh
+│   ├── runtime.sh
 │   ├── security.sh
 │   ├── maintenance.sh
 │   ├── views.sh
 │   ├── views-extra.sh
+│   ├── usability.sh
+│   ├── firewall-v17.sh
 │   └── menu.sh
-└── tests/
+├── tests/
+│   ├── validate-configs.sh
+│   ├── module-smoke.sh
+│   ├── editor-patch.sh
+│   ├── client-export.sh
+│   ├── extra-protocols.sh
+│   ├── subscription-config.sh
+│   ├── hardening.sh
+│   └── hy2-hop.sh
+└── .github/workflows/ci.yml
 ```
 
 ---
 
-## 🧭 后续方向
+## ⚠️ 边界
 
-- [ ] 同协议多节点 / 多配置架构
-- [ ] State schema migration
-- [ ] 更完整的参数化 CLI：`sb add / edit / del`
-- [ ] 指定出站网卡 / 源 IPv4 / IPv6
-- [ ] Hysteria2 端口跳跃（高级可选，默认关闭）
-- [ ] Release / tag 固定版本下载 + SHA256 校验
+- 支持 Debian / Ubuntu；
+- 云厂商安全组需要自行放行；
+- ACME HTTP-01 通常需要公网 `TCP/80`；
+- Cloudflare 普通橙云不代理 Reality / HY2 / TUIC / AnyTLS / 原生 Trojan；
+- 自签证书需要客户端允许跳过证书验证；
+- HY2 端口跳跃不是“加速器”，只针对特定的单端口 UDP QoS / 阻断；
+- 安装器 SHA256 清单提升整包一致性，但不等于独立的密码学代码签名。
 
 ---
 
-## ⭐ 项目原则
+<div align="center">
 
-> **安装可以一键，维护不能靠运气。**
+**先简单部署，出问题跑 `sb doctor`；需要高级能力时再打开高级功能。**
 
-如果这个项目对你有用，可以给仓库一个 Star；比继续堆不常用协议更能帮助项目保持长期维护。
+如果这个项目对你有帮助，可以给仓库一个 ⭐。
+
+</div>
