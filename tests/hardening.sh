@@ -106,7 +106,7 @@ systemctl() {
       [[ "$SYSTEMD_ENABLED" == enabled ]]
       ;;
     show)
-      case "${3:-}" in
+      case "${4:-}" in
         Restart) printf '%s\n' "$SYSTEMD_RESTART" ;;
         RestartUSec) printf '%s\n' "$SYSTEMD_RESTART_USEC" ;;
         *) return 1 ;;
