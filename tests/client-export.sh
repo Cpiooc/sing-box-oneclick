@@ -39,7 +39,11 @@ source "$root/lib/ui.sh"
 # shellcheck source=/dev/null
 source "$root/lib/editor.sh"
 # shellcheck source=/dev/null
+source "$root/lib/extra-protocols.sh"
+# shellcheck source=/dev/null
 source "$root/lib/client-export.sh"
+# shellcheck source=/dev/null
+source "$root/lib/client-extra.sh"
 
 mkdir -p "$APP_DIR" "$CONFIG_DIR" "$BACKUP_DIR"
 
@@ -48,9 +52,10 @@ uuid2=$(sing-box generate uuid)
 uuid3=$(sing-box generate uuid)
 keypair=$(sing-box generate reality-keypair)
 public_key=$(awk '/PublicKey/ {print $NF; exit}' <<< "$keypair" | tr -d '"')
+ss_key=$(sing-box generate rand --base64 16)
 
 jq -n \
-  --arg uuid1 "$uuid1" --arg uuid2 "$uuid2" --arg uuid3 "$uuid3" --arg pub "$public_key" \
+  --arg uuid1 "$uuid1" --arg uuid2 "$uuid2" --arg uuid3 "$uuid3" --arg pub "$public_key" --arg sskey "$ss_key" \
   '{
     version:1,
     nodes:{
@@ -73,6 +78,21 @@ jq -n \
         name:"sing-box-CF-WS",type:"VLESS WebSocket (Cloudflare)",address:"ws.example.com",domain:"ws.example.com",port:8443,
         uuid:$uuid3,path:"/ci-test",firewall:"tcp",cloudflare:true,certificate:true,tls_enabled:true,
         certificate_mode:"acme",insecure:false,uri:""
+      },
+      anytls:{
+        name:"sing-box-AnyTLS",type:"AnyTLS",address:"anytls.example.com",domain:"anytls.example.com",port:8444,
+        password:"test-anytls-password",firewall:"tcp",certificate:true,tls_enabled:true,
+        certificate_mode:"self-signed",insecure:true,uri:""
+      },
+      trojan:{
+        name:"sing-box-Trojan",type:"Trojan",address:"trojan.example.com",domain:"trojan.example.com",port:8445,
+        password:"test-trojan-password",firewall:"tcp",certificate:true,tls_enabled:true,
+        certificate_mode:"acme",insecure:false,uri:""
+      },
+      ss:{
+        name:"sing-box-Shadowsocks",type:"Shadowsocks",address:"ss.example.com",port:8388,
+        method:"2022-blake3-aes-128-gcm",password:$sskey,firewall:"both",tls_enabled:false,
+        certificate:false,uri:""
       }
     }
   }' > "$STATE_FILE"
@@ -92,11 +112,18 @@ grep -q 'reality-opts:' "$exports/mihomo.yaml"
 grep -q 'type: hysteria2' "$exports/mihomo.yaml"
 grep -q 'type: tuic' "$exports/mihomo.yaml"
 grep -q 'network: ws' "$exports/mihomo.yaml"
+grep -q 'type: anytls' "$exports/mihomo.yaml"
+grep -q 'type: trojan' "$exports/mihomo.yaml"
+grep -q 'type: ss' "$exports/mihomo.yaml"
+grep -q '2022-blake3-aes-128-gcm' "$exports/mihomo.yaml"
 
-[[ $(wc -l < "$exports/v2rayn-subscription.txt") -eq 4 ]]
+[[ $(wc -l < "$exports/v2rayn-subscription.txt") -eq 7 ]]
 grep -q '^vless://' "$exports/v2rayn-subscription.txt"
 grep -q '^hysteria2://' "$exports/v2rayn-subscription.txt"
 grep -q '^tuic://' "$exports/v2rayn-subscription.txt"
+grep -q '^anytls://' "$exports/v2rayn-subscription.txt"
+grep -q '^trojan://' "$exports/v2rayn-subscription.txt"
+grep -q '^ss://' "$exports/v2rayn-subscription.txt"
 
 for f in sing-box-client.json mihomo.yaml v2rayn-subscription.txt v2rayn-subscription-base64.txt README.txt; do
   [[ $(stat -c '%a' "$exports/$f") == 600 ]] || { echo "bad permissions: $f" >&2; exit 1; }
