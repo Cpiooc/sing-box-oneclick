@@ -24,6 +24,7 @@ SUBSCRIPTION_PUBLISH_DIR="${APP_DIR}/subscription-publish"
 SUBSCRIPTION_RUNTIME_DIR="${APP_DIR}/subscription-run"
 SUBSCRIPTION_CERTBOT_HOOK="${APP_DIR}/subscription-certbot-hook.sh"
 SUBSCRIPTION_USER="$(id -un)"
+HY2_HOP_UNIT="${APP_DIR}/hy2-hop.service"
 
 C_RESET=''
 C_RED=''
@@ -46,10 +47,13 @@ modules=(
   extra-protocols.sh
   client-export.sh
   client-extra.sh
+  hy2-hop.sh
   subscription.sh
   subscription-hooks.sh
   views.sh
   views-extra.sh
+  usability.sh
+  firewall-v17.sh
   menu.sh
 )
 
@@ -70,9 +74,11 @@ required=(
   show_subscription_urls rotate_subscription_token refresh_https_subscription disable_https_subscription
   write_subscription_nginx_config publish_subscription_payloads subscription_enabled
   apply_candidate apply_runtime_change singbox_can_reload
-  show_status show_nodes show_qr_codes show_logs network_diagnostics
-  bbr_status certificate_status security_audit
-  backup_now restore_backup safe_update_singbox self_update firewall_setup_v16
+  show_status show_nodes reveal_nodes show_qr_codes show_logs network_diagnostics
+  bbr_status certificate_status security_audit doctor
+  backup_now backup_menu backup_diff prune_backups restore_backup safe_update_singbox self_update
+  firewall_setup_v17 reconcile_managed_ufw_rules
+  hy2_port_hopping_menu hy2_hop_cli hy2_hop_status hy2_hop_apply_from_state
 )
 
 for fn in "${required[@]}"; do
@@ -84,13 +90,14 @@ done
 
 [[ "$(type -t apply_candidate)" == "function" ]]
 [[ "$(type -t show_status)" == "function" ]]
-[[ "$(type -t bbr_status)" == "function" ]]
+[[ "$(type -t doctor)" == "function" ]]
 [[ "$(type -t edit_node_parameters)" == "function" ]]
 [[ "$(type -t generate_all_client_exports)" == "function" ]]
 [[ "$(type -t subscription_menu)" == "function" ]]
 [[ "$(type -t deploy_anytls)" == "function" ]]
 [[ "$(type -t deploy_trojan)" == "function" ]]
 [[ "$(type -t deploy_shadowsocks)" == "function" ]]
+[[ "$(type -t hy2_port_hopping_menu)" == "function" ]]
 
 rm -rf "$APP_DIR"
-echo "All modules loaded and required functions are present."
+echo "All v1.7 modules loaded and required functions are present."
