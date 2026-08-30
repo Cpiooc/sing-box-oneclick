@@ -98,7 +98,9 @@ declare -F doctor_check_systemd_resilience >/dev/null
 declare -F manager_check_update >/dev/null
 declare -F manager_update_notice >/dev/null
 [[ $(declare -f doctor) == *doctor_check_systemd_resilience* ]]
-[[ $(declare -f main) == *'update|self-update'* ]]
+main_def=$(declare -f main)
+[[ "$main_def" == *update* ]]
+[[ "$main_def" == *self-update* ]]
 
 local_commit=1111111111111111111111111111111111111111
 remote_commit=$local_commit
