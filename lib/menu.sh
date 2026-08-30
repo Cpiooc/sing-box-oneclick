@@ -58,8 +58,8 @@ menu() {
     ui_group_end
 
     ui_group "系统安全"
-    ui_item 13 "启用 TCP BBR + fq"
-    ui_item 14 "验证 TCP BBR"
+    ui_item 13 "BBR 开关 / 管理" "开启前自动记录原设置"
+    ui_item 14 "查看 BBR 详细状态"
     ui_item 15 "配置 UFW 防火墙" "自动识别 TCP / UDP / TCP+UDP"
     ui_item 16 "配置 Fail2ban SSH 防护"
     ui_item 17 "启用系统自动安全更新"
@@ -77,7 +77,7 @@ menu() {
     ui_group_end
 
     echo
-    echo -e "  ${C_DIM}CLI  sb doctor · sb nodes · sb reveal · sb qr · sb edit · sb sub · sb backup · sb hy2-hop${C_RESET}"
+    echo -e "  ${C_DIM}CLI  sb doctor · sb nodes · sb reveal · sb qr · sb edit · sb sub · sb backup · sb bbr · sb hy2-hop${C_RESET}"
     echo -e "  ${C_CYAN} 0${C_RESET}  退出"
     echo
     read -r -p "  请选择操作 › " choice
@@ -95,7 +95,7 @@ menu() {
       10) show_status; pause ;;
       11) show_logs; pause ;;
       12) network_diagnostics; pause ;;
-      13) enable_bbr || true; pause ;;
+      13) bbr_menu; pause ;;
       14) bbr_status; pause ;;
       15) firewall_setup_v17; pause ;;
       16) fail2ban_setup; pause ;;
@@ -154,7 +154,7 @@ main() {
     qr) show_qr_codes ;;
     logs|log) show_logs ;;
     audit|check) security_audit ;;
-    bbr) bbr_status ;;
+    bbr) bbr_cli "${2:-menu}" ;;
     cert|certificate) certificate_status ;;
     version|-v|--version) show_script_version ;;
     help|-h|--help) ui_cli_help ;;
