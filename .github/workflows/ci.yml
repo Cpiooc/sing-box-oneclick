@@ -36,12 +36,6 @@ jobs:
           TERM: dumb
         run: bash tests/hardening.sh
 
-      - name: Validate HY2 port hopping exports
-        env:
-          NO_COLOR: "1"
-          TERM: dumb
-        run: bash tests/hy2-hop.sh
-
       - name: Validate HTTPS subscription config
         env:
           NO_COLOR: "1"
@@ -74,6 +68,12 @@ jobs:
 
       - name: Validate representative server configs
         run: bash tests/validate-configs.sh
+
+      - name: Validate HY2 port hopping exports
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/hy2-hop.sh
 
       - name: Validate AnyTLS Trojan and Shadowsocks helpers
         env:
