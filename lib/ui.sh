@@ -163,13 +163,18 @@ ui_cli_help() {
   sb edit            原地修改节点参数
   sb export          本地生成 sing-box / Mihomo / v2rayN 配置
   sb sub             管理安全 HTTPS 私有订阅
+  sb core            sing-box 版本管理
+  sb core latest     更新到最新稳定版
+  sb core install X  安装指定 sing-box 版本
+  sb core rollback   回退到上一个核心版本
+  sb core list       查看最近稳定版本
   sb anytls          部署 / 重建 AnyTLS
   sb trojan          部署 / 重建 Trojan
   sb ss              部署 / 重建 Shadowsocks
   sb qr              显示节点二维码
   sb logs            查看最近日志
   sb audit           完整安全自检
-  sb bbr             查看 TCP BBR 状态
+  sb bbr             管理 TCP BBR 开 / 关 / 状态
   sb cert            查看证书状态
   sb version         显示脚本与 sing-box 版本
   sb help            显示此帮助
