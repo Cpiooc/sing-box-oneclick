@@ -4,13 +4,13 @@
 show_script_version() {
   ui_banner
   echo
-  echo -e "  管理脚本 : ${C_BOLD}v${SCRIPT_VERSION}${C_RESET}"
+  ui_kv "管理脚本" "v${SCRIPT_VERSION}"
   if have sing-box; then
-    echo -e "  sing-box : ${C_BOLD}$(sing-box version 2>/dev/null | head -n1 || echo unknown)${C_RESET}"
+    ui_kv "sing-box" "$(sing-box version 2>/dev/null | head -n1 || echo unknown)"
   else
-    echo "  sing-box : 未安装"
+    ui_kv "sing-box" "未安装"
   fi
-  echo -e "  仓库     : ${C_CYAN}${REPO}${C_RESET}"
+  ui_kv "仓库" "$REPO"
 }
 
 menu() {
@@ -20,15 +20,22 @@ menu() {
     ui_dashboard
     ui_rule
 
-    ui_group "节点部署"
-    ui_item 1  "安装 / 修复 sing-box"
-    ui_item 2  "部署 / 重建 VLESS + Reality"
-    ui_item 3  "部署 / 重建 Hysteria2"
-    ui_item 4  "Reality + Hysteria2 双协议"
-    ui_item 5  "部署 / 重建 Cloudflare VLESS WS（TLS 可选）"
-    ui_item 6  "部署 / 重建 TUIC v5"
+    ui_group "核心部署" "推荐主力入口"
+    ui_item 1  "安装 / 修复 sing-box" "官方稳定版"
+    ui_item 2  "VLESS + Reality" "TCP · Vision"
+    ui_item 3  "Hysteria2" "UDP · QUIC"
+    ui_item 4  "Reality + Hysteria2" "TCP/UDP 双 443"
+    ui_item 5  "Cloudflare VLESS WS" "TCP · TLS 可选"
+    ui_item 6  "TUIC v5" "UDP · QUIC"
+    ui_group_end
 
-    ui_group "节点管理"
+    ui_group "兼容协议" "v1.6 新增"
+    ui_item 30 "AnyTLS" "TCP · TLS"
+    ui_item 31 "Trojan" "TCP · TLS"
+    ui_item 32 "Shadowsocks" "TCP+UDP · 2022 BLAKE3"
+    ui_group_end
+
+    ui_group "节点与订阅" "日常维护"
     ui_item 7  "查看全部节点 / 分享链接"
     ui_item 8  "显示节点二维码"
     ui_item 9  "删除单个节点"
@@ -36,11 +43,13 @@ menu() {
     ui_item 27 "原地修改节点参数"
     ui_item 28 "本地客户端配置 / 订阅导出"
     ui_item 29 "安全 HTTPS 在线订阅"
+    ui_group_end
 
     ui_group "运行与诊断"
     ui_item 10 "sing-box 状态 / 配置校验"
     ui_item 11 "查看 sing-box 日志"
     ui_item 12 "网络诊断"
+    ui_group_end
 
     ui_group "系统安全"
     ui_item 13 "启用 TCP BBR + fq"
@@ -49,21 +58,20 @@ menu() {
     ui_item 16 "配置 Fail2ban SSH 防护"
     ui_item 17 "启用系统自动安全更新"
     ui_item 18 "完整安全自检"
+    ui_group_end
 
-    ui_group "备份与证书"
+    ui_group "备份 / 证书 / 更新"
     ui_item 19 "立即备份配置"
     ui_item 20 "恢复配置备份"
     ui_item 21 "查看 TLS 证书状态"
     ui_item 22 "手动续期 ACME 证书"
-
-    ui_group "维护"
     ui_item 23 "安全更新 sing-box"
     ui_item 24 "更新本管理脚本"
     ui_item 25 "完全卸载"
+    ui_group_end
 
     echo
-    ui_rule
-    echo -e "  ${C_DIM}快捷命令：sb status · sb nodes · sb edit · sb export · sb sub · sb logs · sb audit · sb cert${C_RESET}"
+    echo -e "  ${C_DIM}CLI  sb status · sb nodes · sb edit · sb export · sb sub · sb anytls · sb trojan · sb ss${C_RESET}"
     echo -e "  ${C_CYAN} 0${C_RESET}  退出"
     echo
     read -r -p "  请选择操作 › " choice
@@ -83,7 +91,7 @@ menu() {
       12) network_diagnostics; pause ;;
       13) enable_bbr || true; pause ;;
       14) bbr_status; pause ;;
-      15) firewall_setup; pause ;;
+      15) firewall_setup_v16; pause ;;
       16) fail2ban_setup; pause ;;
       17) enable_security_updates; pause ;;
       18) security_audit; pause ;;
@@ -98,6 +106,9 @@ menu() {
       27) edit_node_parameters; pause ;;
       28) client_export_menu; pause ;;
       29) subscription_menu; pause ;;
+      30) deploy_anytls; pause ;;
+      31) deploy_trojan; pause ;;
+      32) deploy_shadowsocks; pause ;;
       0) exit 0 ;;
       *) warn "无效选择：${choice:-空}"; sleep 1 ;;
     esac
@@ -124,6 +135,9 @@ main() {
     edit|modify) edit_node_parameters ;;
     export|client) client_export_menu ;;
     subscription|sub) subscription_menu ;;
+    anytls) deploy_anytls ;;
+    trojan) deploy_trojan ;;
+    ss|shadowsocks) deploy_shadowsocks ;;
     qr) show_qr_codes ;;
     logs|log) show_logs ;;
     audit|check) security_audit ;;
