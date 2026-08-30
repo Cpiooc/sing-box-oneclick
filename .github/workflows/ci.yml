@@ -36,6 +36,12 @@ jobs:
           TERM: dumb
         run: bash tests/hardening.sh
 
+      - name: Validate BBR on off restore manager
+        env:
+          NO_COLOR: "1"
+          TERM: dumb
+        run: bash tests/bbr-manager.sh
+
       - name: Validate HTTPS subscription config
         env:
           NO_COLOR: "1"
