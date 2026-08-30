@@ -113,6 +113,18 @@ for node in hy2 tuic anytls trojan; do
   ! grep -Fq 'skip-cert-verify: true' <<< "$mihomo"
 done
 
+# Build the full sing-box client config. In CI this test runs after the current
+# stable sing-box is installed, so export_singbox_client performs a real check.
+export_singbox_client
+[[ -s "$CLIENT_EXPORT_DIR/sing-box-client.json" ]]
+for node in proxy-hy2 proxy-tuic proxy-anytls proxy-trojan; do
+  [[ $(jq -r --arg tag "$node" '.outbounds[] | select(.tag==$tag) | .tls.insecure' "$CLIENT_EXPORT_DIR/sing-box-client.json") == false ]]
+  [[ $(jq -r --arg tag "$node" '.outbounds[] | select(.tag==$tag) | .tls.certificate_public_key_sha256[0]' "$CLIENT_EXPORT_DIR/sing-box-client.json") == "$spki" ]]
+done
+if have sing-box; then
+  sing-box check -c "$CLIENT_EXPORT_DIR/sing-box-client.json"
+fi
+
 # IP defaults must actually select self-signed, matching the beginner prompt.
 select_def=$(declare -f select_certificate_mode)
 [[ "$select_def" == *'default_choice=2'* ]]
@@ -133,4 +145,4 @@ grep -Fq 'pcs is included' "$CLIENT_EXPORT_DIR/README.txt"
 ! grep -R -Fq 'skip-cert-verify: true' "$CLIENT_EXPORT_DIR" || { echo 'unexpected skip-cert-verify:true in exports' >&2; exit 1; }
 ! grep -R -Fq '"insecure":true' "$CLIENT_EXPORT_DIR" || { echo 'unexpected insecure:true in exports' >&2; exit 1; }
 
-printf '%s\n' 'Certificate pinning, migration, client exports and beginner verification guidance passed.'
+printf '%s\n' 'Certificate pinning, migration, stable sing-box validation, client exports and beginner verification guidance passed.'
