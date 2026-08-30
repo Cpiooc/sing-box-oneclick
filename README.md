@@ -7,38 +7,38 @@
 安全 · 多协议 · 可回滚 · 默认隐藏秘密 · 本地优先
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-v1.7.0-2563eb?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-v1.8.0-2563eb?style=flat-square">
   <img alt="CI" src="https://github.com/Cpiooc/sing-box-oneclick/actions/workflows/ci.yml/badge.svg">
   <img alt="Shell" src="https://img.shields.io/badge/shell-bash-4EAA25?style=flat-square&logo=gnubash&logoColor=white">
-  <img alt="Debian" src="https://img.shields.io/badge/Debian-11%20%7C%2012%20%7C%2013-A81D33?style=flat-square&logo=debian&logoColor=white">
-  <img alt="Ubuntu" src="https://img.shields.io/badge/Ubuntu-22.04%20%7C%2024.04-E95420?style=flat-square&logo=ubuntu&logoColor=white">
 </p>
 
 `Reality` · `Hysteria2` · `TUIC v5` · `Cloudflare WS` · `AnyTLS` · `Trojan` · `Shadowsocks 2022`
 
-`sb doctor` · `HTTPS Subscription` · `Client Export` · `Atomic Update` · `Rollback` · `BBR` · `UFW`
+`sb doctor` · `sb core` · `BBR` · `HTTPS Subscription` · `Client Export` · `Atomic Update`
 
 </div>
 
 ---
 
 > [!NOTE]
-> **项目定位**：功能够用以后，优先把“安装简单、提示清楚、失败能回滚、秘密不乱显示、长期维护省心”做好。普通用户不需要理解所有高级选项，看到推荐默认值时直接按 **Enter** 即可。
+> **项目定位**：不是把所有高级功能塞给用户，而是让普通 VPS 用户尽量“直接按 Enter 就能得到安全推荐值”。复杂功能单独放到高级菜单，并在操作前解释用途、风险和回滚方式。
 
-## ✨ v1.7 重点
+## ✨ v1.8 重点
 
 | 能力 | 说明 |
 |---|---|
-| 🧭 **小白友好流程** | 推荐值明确标出；域名自动推荐 ACME，IP 自动推荐自签；高级功能不塞进首次部署 |
-| 🙈 **秘密默认打码** | `sb nodes` 默认隐藏 UUID、密码、密钥和完整分享 URI；`sb reveal` 才显示完整凭据 |
-| 🩺 **`sb doctor`** | 一键检查服务、配置、State 漂移、证书、权限、UFW、订阅、HY2 跳跃、SHA256 等 |
-| ♻️ **自动备份治理** | 默认只保留最近 30 个备份；支持脱敏 Diff，比较时不把密码/UUID/Token 打到终端 |
-| 📦 **原子管理器更新** | 锁定同一个 Git commit → 下载整包 → SHA256 校验 → Bash 检查 → 版本目录 → symlink 原子切换 |
-| 🧱 **SS UFW 双协议修复** | `firewall: both` 会统一按 TCP + UDP 处理，不再依赖单协议分支 |
-| 🦘 **HY2 端口跳跃** | 高级可选、默认关闭；支持 sing-box / Mihomo / URI 导出同步 |
-| 🔒 **HTTPS 私有订阅** | HTTPS only + 256-bit Token + no-store + 可轮换 + 可停用 |
-| ✏️ **原地修改** | 端口、SNI、Path、密码、UUID、SS Cipher、TUIC 拥塞控制等无需整节点重建 |
-| ✅ **持续验证** | 7 协议服务端、客户端导出、编辑、HTTPS、hardening、HY2 hopping、SHA256 清单全部进 CI |
+| 📦 **sing-box 版本管理** | 最新稳定版、指定版本、降级、上一版回退、版本列表 |
+| 🛟 **核心切换自动恢复** | 切换前备份旧核心；配置不兼容或服务启动失败时自动恢复 |
+| 🧭 **小白友好流程** | 推荐值明确标出；不知道怎么选时通常直接按 Enter |
+| 🙈 **秘密默认打码** | `sb nodes` 默认隐藏 UUID、密码、密钥和完整分享 URI |
+| 🩺 **`sb doctor`** | 一键检查服务、配置、证书、权限、UFW、订阅、HY2 跳跃和管理器完整性 |
+| ♻️ **自动备份 + 安全 Diff** | 默认只保留最近 30 个备份；Diff 自动隐藏秘密 |
+| 🚀 **BBR 开 / 关 / 状态** | 开启前保存原设置，关闭时优先恢复原拥塞控制和 qdisc |
+| 🦘 **HY2 端口跳跃** | 高级可选、默认关闭；导出 sing-box / Mihomo 时同步 |
+| 🧱 **SS UFW TCP+UDP** | `firewall: both` 正确管理 TCP + UDP |
+| 🔒 **HTTPS 私有订阅** | HTTPS only + 随机 Token + no-store + 可轮换 |
+| 🔐 **管理器原子更新** | 锁定同一 Git commit → SHA256 → Bash 检查 → 原子切换 |
+| ✅ **持续验证** | Bash、模块、核心版本管理、7 协议配置、HY2、订阅、编辑器和客户端导出进入 CI |
 
 ---
 
@@ -50,7 +50,7 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/Cpiooc/sing-box-oneclick/main/install.sh)
 ```
 
-安装后以后只需要：
+以后管理只需要：
 
 ```bash
 sb
@@ -58,65 +58,45 @@ sb
 
 ### 小白怎么选？
 
-大多数页面都遵循这三个规则：
+记住三个规则就够了：
 
 ```text
-1. 必须由你提供的东西才会问，例如：节点域名 / IP
-2. 已有安全推荐值的选项直接按 Enter
-3. 高级功能默认关闭，真正需要时再单独打开
+1. 必须由你提供的东西才会问，例如域名 / IP
+2. 有“推荐”默认值时，不懂就直接按 Enter
+3. 高级功能默认关闭，需要时再单独打开
 ```
 
-例如 TLS：
+常见推荐：
 
 ```text
-◆ TLS 证书
-• 检测到域名 node.example.com。新手直接按 Enter，自动申请 Let's Encrypt 即可。
-
-  1  自动申请 Let's Encrypt   · 有域名时推荐 · 自动续期
-  2  自动生成自签证书         · 无域名也能用
-  3  导入已有 PEM             · 高级用户
-
-  请选择 [1] ›
+有域名        → Let's Encrypt / ACME
+只有 IP       → 自签证书
+主力 TCP      → Reality
+主力 UDP      → Hysteria2
+Cloudflare    → VLESS WebSocket
+兼容备用      → AnyTLS / Trojan / Shadowsocks
+HY2 端口跳跃  → 默认关闭
 ```
-
-如果填写的是 IP，脚本会改为默认推荐自签证书，并明确提示客户端需要允许不安全证书。
 
 > [!IMPORTANT]
-> 脚本需要 `root`。VPS 厂商的 Security Group / 云防火墙不由脚本控制；对应端口仍要在厂商控制台放行。
-
-### 从旧版本升级
-
-旧版用户：
-
-```text
-sb → 24. 安全更新本管理脚本
-```
-
-更新后**退出一次，再重新运行**：
-
-```bash
-sb
-```
-
-跨越新增模块的大版本时，第二次运行会自动补齐完整校验整包。也可以直接重新执行上面的一键安装命令，现有 sing-box 节点配置不会因此被清空。
+> 脚本需要 `root`。VPS 厂商的 Security Group / 云防火墙不由脚本控制；脚本提示的 TCP/UDP 端口仍要在厂商控制台放行。
 
 ---
 
-## 🖥️ v1.7 控制台
+## 🖥️ 控制台
 
 ```text
 ╭──────────────────────────────────────────────────────────────────╮
-│  SING-BOX ONECLICK                                      v1.7.0  │
+│  SING-BOX ONECLICK                                      v1.8.0  │
 │  Secure Gateway Manager · safe changes · local-first           │
 ╰──────────────────────────────────────────────────────────────────╯
 
   CORE  ● sing-box active  v1.x.x     ● BBR ON
   NET   ● IPv4 ON          ● IPv6 ON      ◆ Nodes 4
   SUB   ● Private HTTPS    TCP/9443
-  ───────────────────────────────────────────────────────────
 
   ┌─ 核心部署  小白推荐：按提示一路使用默认值
-  │  1  安装 / 修复 sing-box     · 官方稳定版
+  │  1  安装 / 修复 sing-box     · 最新稳定版 · 小白推荐
   │  2  VLESS + Reality          · TCP · Vision · 主力推荐
   │  3  Hysteria2                · UDP · QUIC · 主力推荐
   │  4  Reality + Hysteria2      · TCP/UDP 双 443
@@ -125,9 +105,9 @@ sb
   └────────────────────────────────────────────────────────────
 
   ┌─ 节点与订阅  敏感信息默认隐藏
-  │  7  查看节点安全视图         · UUID / 密码 / URI 打码
-  │  8  显示节点二维码           · 包含完整凭据
-  │ 36  显示完整节点凭据         · 敏感操作
+  │  7  查看节点安全视图
+  │  8  显示节点二维码
+  │ 36  显示完整节点凭据
   │ 29  安全 HTTPS 在线订阅
   │ 33  HY2 端口跳跃             · 高级 · 默认关闭
   └────────────────────────────────────────────────────────────
@@ -135,18 +115,107 @@ sb
   ┌─ 运行与诊断  出问题先跑 doctor
   │ 34  一键体检 sb doctor       · 只检查，不自动改配置
   │ 10  sing-box 状态 / 配置校验
-  │ 11  查看日志
+  │ 11  查看 sing-box 日志
   │ 12  网络诊断
+  └────────────────────────────────────────────────────────────
+
+  ┌─ 系统安全
+  │ 13  BBR 开关 / 管理          · 开启前自动记录原设置
+  │ 14  查看 BBR 详细状态
+  │ 15  配置 UFW 防火墙
+  │ 16  配置 Fail2ban
+  └────────────────────────────────────────────────────────────
+
+  ┌─ 备份 / 证书 / 更新
+  │ 19  备份管理                 · 自动保留 30 个 · 安全 Diff
+  │ 23  sing-box 版本管理        · 最新 / 指定版本 / 上一版回退
+  │ 24  安全更新本管理脚本       · 锁定 commit + SHA256
   └────────────────────────────────────────────────────────────
 ```
 
-功能多，但普通用户常用的入口仍然集中在顶部。
+功能不少，但普通用户最常用的仍然是顶部部署入口和 `sb doctor`。
+
+---
+
+## 📦 sing-box 版本管理
+
+v1.8 新增完整的核心版本管理器：
+
+```bash
+sb core
+```
+
+菜单：
+
+```text
+◆ sing-box 版本管理
+
+当前版本      1.x.x
+最新稳定版    1.x.x
+可回退版本    1.x.x
+
+1  更新到最新稳定版      · 小白推荐
+2  安装指定版本          · 高级 · 支持升级 / 降级
+3  回退到上一个版本      · 使用本地核心快照
+4  查看可用版本          · 最近稳定版
+0  返回
+```
+
+CLI：
+
+```bash
+sb core status
+sb core latest
+sb core install 1.13.19
+sb core downgrade 1.12.10
+sb core rollback
+sb core list
+```
+
+### 指定版本为什么相对安全？
+
+脚本不会直接覆盖后祈祷服务能起来，而是执行事务式流程：
+
+```text
+确认官方 Release 存在
+        ↓
+备份当前 sing-box 核心
+        ↓
+调用官方安装器 --version <版本>
+        ↓
+确认实际安装版本
+        ↓
+sing-box check 当前配置
+        ↓
+重启并检查 active
+        ↓
+成功
+```
+
+如果安装器失败、降级后的旧版本不认识当前配置，或者新核心启动后没有保持 active：
+
+```text
+失败
+ ↓
+自动尝试恢复旧版本
+ ↓
+重新检查配置 / 服务
+```
+
+最近的核心快照会保留少量版本，因此可以：
+
+```bash
+sb core rollback
+```
+
+> [!WARNING]
+> 降级风险通常高于升级。旧版本可能不支持当前配置中的新字段，所以降级会额外提示并要求确认。
 
 ---
 
 ## 🌐 协议矩阵
 
-| 协议 | 传输 | 推荐端口 | TLS | 用途 |
+| 协议 | 传输 | 常用端口 | TLS | 推荐用途 |
 |---|---|---:|---|---|
 | **VLESS + Reality + Vision** | TCP | `443/TCP` | Reality | 主力 TCP |
 | **Hysteria2 + Salamander** | QUIC / UDP | `443/UDP` | 必需 | 主力 UDP |
@@ -156,13 +225,14 @@ sb
 | **Trojan** | TCP | `443` / `8445` | 必需 | 高兼容 TLS TCP |
 | **Shadowsocks 2022** | TCP + UDP | `8388` | 无普通 TLS | 兼容 / 备用 |
 
-最简单的主力布局仍然是：
+一个常见、简单的布局：
 
 ```text
-443/TCP   ── Reality
-443/UDP   ── Hysteria2
-8443/TCP  ── Cloudflare WS
-8443/UDP  ── TUIC
+443/TCP   → Reality
+443/UDP   → Hysteria2
+8443/TCP  → Cloudflare WS
+8443/UDP  → TUIC
+9443/TCP  → HTTPS 私有订阅（如启用）
 ```
 
 不需要为了“协议齐全”把 7 种全部部署。
@@ -177,74 +247,110 @@ sb
 sb nodes
 ```
 
-显示类似：
+默认隐藏：
 
 ```text
-╭────────────────────────────────────────────────────────────╮
-│ ● sing-box-Hysteria2  [hy2]
-│ Hysteria2
-│ 入口  hy2.example.com:443  UDP
-│ SNI   hy2.example.com · QUIC + Salamander
-│ 密码  7a1f••••••••d891
-│ 分享链接已隐藏 · 使用 sb qr 扫码，或 sb reveal 显示完整凭据
-╰────────────────────────────────────────────────────────────╯
+UUID
+密码
+Reality 私钥 / 公钥 / short_id
+Shadowsocks 密钥
+完整分享 URI
+订阅 Token
 ```
 
-需要复制完整链接时才运行：
+明确需要完整凭据时才运行：
 
 ```bash
 sb reveal
 ```
 
-二维码同样包含完整凭据，因此：
+二维码：
 
 ```bash
 sb qr
 ```
 
-会先显示安全提醒。
+二维码同样包含完整凭据，所以终端会先提示安全风险。
 
 > [!WARNING]
-> 完整节点 URI、二维码和 HTTPS 订阅 URL 都属于凭据。不要公开截图、贴到 Issue/论坛，也不要发送给第三方订阅转换网站。
+> 完整节点 URI、二维码和 HTTPS 订阅 URL 都属于凭据。不要把它们公开贴到 Issue、论坛、群聊截图或第三方订阅转换网站。
 
 ---
 
 ## 🩺 `sb doctor` 一键体检
 
-遇到“突然连不上 / 改完配置不确定对不对 / 升级后想确认状态”，先运行：
+遇到“突然连不上”“改完不知道哪里错”“升级后想确认正常”，先运行：
 
 ```bash
 sb doctor
 ```
 
-它**只检查，不会擅自重启服务或修改配置**。
+它的原则是：**只检查，不擅自修改配置，不自动重启你的服务。**
 
-检查内容包括：
+检查包括：
 
 ```text
-✓ root / Debian / Ubuntu
+✓ root / Debian / Ubuntu 环境
 ✓ 基础依赖
 ✓ sing-box 安装、版本、active 状态
 ✓ sing-box check
 ✓ state.json 结构
 ✓ config / state / node-info 权限
-✓ State 与配置中的监听端口是否漂移
-✓ TLS 证书文件和到期时间
+✓ State 与实际监听配置漂移
+✓ TLS 证书文件和到期状态
 ✓ UFW 基础端口
 ✓ NTP 时间同步
 ✓ HTTPS 私有订阅服务
-✓ HY2 端口跳跃重定向规则
+✓ HY2 端口跳跃状态
 ✓ 备份数量
 ✓ 管理器 SHA256SUMS
 ```
 
-最后给出：
+最后会汇总：
 
 ```text
 PASS 18   WARN 1   FAIL 0
 ```
 
-`FAIL` 优先处理；`WARN` 很多时候只是可选安全项或环境提示。
+优先处理 `FAIL`；`WARN` 很多时候只是可选功能或环境提醒。
+
+---
+
+## 🚀 BBR 开 / 关 / 状态
+
+```bash
+sb bbr
+```
+
+CLI：
+
+```bash
+sb bbr on
+sb bbr off
+sb bbr status
+```
+
+第一次由本脚本开启 BBR 时，会先保存当前：
+
+```text
+net.ipv4.tcp_congestion_control
+net.core.default_qdisc
+```
+
+例如：
+
+```text
+开启前   cubic / fq_codel
+开启后   bbr   / fq
+关闭后   cubic / fq_codel
+```
+
+也就是说，关闭时优先恢复原设置，而不是简单写死成 `cubic`。
+
+如果检测到 BBR 是其他工具管理的，脚本不会直接删除对方配置。
+
+> [!NOTE]
+> Linux TCP BBR 主要影响 TCP；Hysteria2 / TUIC 使用 QUIC/UDP，不依赖这里的 TCP BBR。
 
 ---
 
@@ -254,103 +360,22 @@ PASS 18   WARN 1   FAIL 0
 sb backup
 ```
 
-默认：
+默认行为：
 
-- 每次关键配置变更前自动备份；
-- 只保留最近 **30** 个，防止长期堆积；
-- 可立即备份、恢复、清理；
-- 可以比较任意两个备份。
+- 关键配置修改前自动备份；
+- 默认只保留最近 **30** 个备份；
+- 支持手动备份、恢复和清理；
+- 支持比较两个备份；
+- Diff 输出前自动隐藏密码、UUID、Key、Token、URI 等秘密。
 
-Diff 前会自动把这些内容打码：
-
-```text
-password
-uuid
-private_key
-public_key
-short_id
-token
-uri
-```
-
-所以你能看到：
+因此你可以看到：
 
 ```diff
 - "listen_port": 443
 + "listen_port": 8443
 ```
 
-但不会把真实密码顺便打进 SSH 终端历史/截图。
-
----
-
-## 📦 原子版本更新 + SHA256
-
-v1.7 不再从 `main` 一边变化一边逐个拼模块。
-
-更新流程：
-
-```text
-读取 GitHub main
-      ↓
-锁定一个 40 位 commit SHA
-      ↓
-所有文件只从该 commit 下载
-      ↓
-逐文件 SHA256SUMS 校验
-      ↓
-Bash 语法检查
-      ↓
-写入独立版本目录
-      ↓
-symlink 原子切换当前管理器
-```
-
-入口：
-
-```text
-sb → 24. 安全更新本管理脚本
-```
-
-或在控制台看到：
-
-```text
-当前版本   v1.7.0
-远端版本   v1.7.x
-锁定提交   0123456789ab
-```
-
-历史管理器版本目录会保留少量最近版本，避免每次更新都覆盖唯一副本。
-
-> [!NOTE]
-> SHA256 可以防止下载损坏、文件混装和与仓库清单不一致；它不是代码签名本身。仓库账号和 GitHub 仍属于信任链的一部分。
-
----
-
-## 🧱 UFW：Shadowsocks TCP + UDP
-
-Shadowsocks 状态使用：
-
-```text
-firewall = both
-```
-
-v1.7 的 UFW 收敛层原生识别：
-
-```text
-tcp   → TCP
-udp   → UDP
-both  → TCP + UDP
-```
-
-因此无论是“先开 UFW 后部署 SS”，还是“先部署 SS 再初始化 UFW”，都会明确补齐：
-
-```text
-8388/tcp
-8388/udp
-```
-
-Cloudflare WS 的源站限制仍保持独立逻辑，不会因为统一收敛而被重新放成全网可访问。
+但不会顺便把真实密码打印进终端记录。
 
 ---
 
@@ -362,266 +387,297 @@ Cloudflare WS 的源站限制仍保持独立逻辑，不会因为统一收敛而
 sb hy2-hop
 ```
 
-适合这种症状：
+它主要适合这种情况：
 
 ```text
-HY2 刚开始正常
-      ↓
-持续使用某个 UDP 端口后被限速 / 阻断
-      ↓
-手工换一个 UDP 端口又恢复
+某个 UDP 端口开始正常
+        ↓
+持续使用后该单端口被限速 / 阻断
+        ↓
+换 UDP 端口又恢复
 ```
 
-如果运营商限制的是**整个 UDP**，端口跳跃不会解决问题。
-
-推荐默认设置：
-
-```text
-范围       UDP/20000-30000
-跳跃间隔   30 秒
-实际 HY2   UDP/443（或你当前端口）
-```
-
-服务器会使用 Linux nftables（没有时可回退 iptables）把跳跃范围重定向到实际 HY2 监听端口；客户端导出同步更新：
-
-```text
-sing-box  → server_ports + hop_interval
-Mihomo    → ports + hop-interval
-URI       → Hysteria2 multi-port 地址
-```
+服务器端会把一个 UDP 端口范围重定向到实际 HY2 监听端口；客户端导出会同步 `server_ports` / hopping 配置。
 
 > [!IMPORTANT]
-> 开启后必须在 VPS 厂商 **Security Group / 云防火墙** 放行对应 UDP 范围。范围越大暴露面越大，因此脚本限制单次范围最多 20,000 个端口，并且此功能不会在首次部署中自动开启。
+> 如果运营商直接限制整条 UDP，端口跳跃通常无济于事。VPS 云防火墙也必须同步放行跳跃范围。
+
+普通用户没有上述症状时，不建议开启。
 
 ---
 
-## ✏️ 原地修改节点
-
-```bash
-sb edit
-```
-
-| 协议 | 可修改 |
-|---|---|
-| Reality | 地址、端口、SNI、UUID、Short ID |
-| Hysteria2 | 地址、端口、密码、Salamander、伪装站、证书 |
-| TUIC | 地址、端口、UUID、密码、拥塞控制、证书 |
-| CF-WS | 端口、Path、UUID、TLS / 证书 |
-| AnyTLS | 地址、端口、密码、TLS / 证书 |
-| Trojan | 地址、端口、密码、TLS / 证书 |
-| Shadowsocks | 地址、TCP+UDP 端口、密钥、Cipher |
-
-服务端配置变更始终走：
-
-```text
-candidate
-   ↓
-sing-box check
-   ↓
-backup
-   ↓
-原子替换
-   ↓
-优先 reload / restart 兜底
-   ↓
-active 检查
-   ↓
-失败自动回滚
-```
-
-热重载优先用于减少进程级重启，但 sing-box 重新加载配置时仍可能重置部分现有连接，因此项目不会宣传“绝对零中断”。
-
----
-
-## 📱 客户端导出 / HTTPS 私有订阅
-
-本地生成：
-
-```bash
-sb export
-```
-
-输出：
-
-```text
-/etc/sing-box-oneclick/exports/
-├── sing-box-client.json
-├── mihomo.yaml
-├── v2rayn-subscription.txt
-├── v2rayn-subscription-base64.txt
-└── README.txt
-```
-
-不会调用第三方订阅转换网站。
-
-多设备自动更新：
+## 🔒 HTTPS 私有订阅
 
 ```bash
 sb sub
 ```
 
-提供：
+特点：
 
 ```text
-https://sub.example.com:9443/<64位随机Token>/sing-box
-https://sub.example.com:9443/<64位随机Token>/mihomo
-https://sub.example.com:9443/<64位随机Token>/v2rayn
-https://sub.example.com:9443/<64位随机Token>/raw
+HTTPS only
+256-bit 随机 Token 路径
+no-store
+访问日志关闭
+可轮换 Token
+可停用
+发布副本使用低权限服务账户读取
 ```
 
-安全策略包括 HTTPS only、256-bit Token、精确路径、`no-store`、Token 轮换、一键停用、低权限独立 Nginx、默认关闭 access log。
+可提供：
+
+```text
+/sing-box
+/mihomo
+/v2rayn
+/raw
+```
+
+在线订阅只建议使用受信任证书（ACME / 受信任自有 PEM）。自签证书更适合节点本身，不适合公开在线订阅入口。
 
 ---
 
-## 🔐 TLS / 证书
-
-普通 TLS 节点支持：
-
-```text
-1  Let's Encrypt / ACME    有域名推荐
-2  自签证书                IP / 临时使用
-3  导入已有 PEM            高级
-```
-
-Reality 使用自己的 Reality 密钥体系；Shadowsocks 没有普通 TLS 证书层；WS 可以关闭 TLS。
-
-Certbot 自动续期 hook 优先 reload sing-box，失败才 restart。
-
----
-
-## ⚡ BBR 与系统安全
+## 📤 客户端导出
 
 ```bash
-sb bbr
+sb export
 ```
 
-只在当前内核支持 BBR 时启用：
+本地生成：
 
 ```text
-net.core.default_qdisc = fq
-net.ipv4.tcp_congestion_control = bbr
+sing-box-client.json
+mihomo.yaml
+v2rayn-subscription.txt
+v2rayn-subscription-base64.txt
+README.txt
 ```
 
-不会为了 BBR 自动换内核或重启 VPS。
+支持已管理的：
 
-另外支持：
+```text
+Reality
+Hysteria2
+TUIC
+Cloudflare VLESS WS
+AnyTLS
+Trojan
+Shadowsocks
+```
 
-- UFW，保留检测到的 SSH 端口；
-- Fail2ban SSH 防护；
-- unattended-upgrades；
-- 不默认关闭 root、不强改 SSH 端口、不自动禁用密码登录；
-- 不安装会主动重启 sing-box 的 watchdog。
+原始导出目录和文件保持 root-only 权限；HTTPS 订阅只发布经过专门复制的低权限副本。
 
 ---
 
-## ⌨️ 常用快捷命令
+## 🔐 管理脚本安全更新
+
+管理脚本本身的更新入口：
+
+```text
+sb → 24. 安全更新本管理脚本
+```
+
+流程：
+
+```text
+解析 GitHub main
+      ↓
+锁定一个 40 位 commit SHA
+      ↓
+所有组件只从该 commit 下载
+      ↓
+逐文件 SHA256SUMS
+      ↓
+Bash 语法检查
+      ↓
+写入独立版本目录
+      ↓
+symlink 原子切换
+```
+
+这和 `sb core` 是两件事：
+
+```text
+sb core     → 管 sing-box 核心版本
+菜单 24     → 管 sing-box-oneclick 管理脚本版本
+```
+
+> [!NOTE]
+> SHA256 用于发现下载损坏、文件混装或与仓库清单不一致。它不是独立的代码签名机制，GitHub 仓库本身仍属于信任链。
+
+---
+
+## 🧱 UFW / Shadowsocks TCP+UDP
+
+Shadowsocks 使用：
+
+```text
+firewall = both
+```
+
+脚本会把它解释为：
+
+```text
+tcp   → TCP
+udp   → UDP
+both  → TCP + UDP
+```
+
+所以无论先部署 SS 还是先初始化 UFW，都会补齐对应 TCP 和 UDP 放行规则。
+
+Cloudflare WS 的源站限制逻辑保持独立，不会因为统一防火墙处理而自动放成全网访问。
+
+---
+
+## 🔧 常用 CLI
 
 ```bash
-sb                 # 控制台
-sb doctor          # 一键体检
-sb status          # sing-box 状态
-sb nodes           # 节点安全视图（打码）
-sb reveal          # 完整节点凭据（敏感）
-sb qr              # 二维码（敏感）
-sb edit            # 原地修改
-sb export          # 本地客户端导出
-sb sub             # HTTPS 私有订阅
-sb backup          # 备份 / Diff / 清理
-sb hy2-hop         # HY2 端口跳跃，高级、默认关闭
-sb anytls          # AnyTLS
-sb trojan          # Trojan
-sb ss              # Shadowsocks
-sb logs            # 日志
-sb audit           # 完整安全自检
-sb cert            # 证书
-sb bbr             # BBR
-sb version         # 版本 / commit
-sb help            # 帮助
+sb                      # 交互式控制台
+sb status               # 服务状态 + 配置校验
+sb doctor               # 一键体检
+sb nodes                # 安全节点视图
+sb reveal               # 完整节点凭据
+sb qr                   # 二维码
+sb edit                 # 原地修改节点参数
+sb export               # 客户端导出
+sb sub                  # HTTPS 私有订阅
+sb backup               # 备份 / Diff / 恢复
+sb core                 # sing-box 版本管理
+sb core latest          # 更新最新稳定版
+sb core install X.Y.Z   # 安装指定版本
+sb core rollback        # 回退上一核心版本
+sb bbr                  # BBR 管理
+sb bbr on               # 开启 BBR + fq
+sb bbr off              # 关闭并恢复原设置
+sb bbr status           # BBR 详细状态
+sb hy2-hop              # HY2 端口跳跃
+sb anytls               # AnyTLS
+sb trojan               # Trojan
+sb ss                   # Shadowsocks
+sb logs                 # 最近日志
+sb version              # 管理器 / sing-box 版本
+sb help                 # 帮助
 ```
 
 ---
 
-## ✅ CI
+## 🔄 从旧版升级
 
-每次提交持续验证：
+已有用户：
 
 ```text
-Bash syntax
-Module integration smoke
-Novice safety / masking / backup retention / UFW both
-HY2 port hopping exports
-HTTPS subscription Nginx hardening
-SHA256SUMS bundle integrity
-Current stable sing-box install
-7-protocol representative server configs
-AnyTLS / Trojan / Shadowsocks regressions
-In-place editing
-Generated sing-box / Mihomo / v2rayN configs
+sb → 24. 安全更新本管理脚本
 ```
 
-这些测试不能替代真实 VPS 的 ACME、云安全组、UFW/systemd 全链路测试，但能尽量把配置结构和脚本回归挡在发布前。
+更新后退出一次，再运行：
+
+```bash
+sb
+```
+
+跨越新增模块的版本时，重新运行会自动发现缺失组件，并尝试下载同一 commit 的完整校验整包。
+
+也可以重新执行安装命令：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Cpiooc/sing-box-oneclick/main/install.sh)
+```
+
+它不会因为重新安装管理器就主动清空已有节点配置。
 
 ---
 
-## 📁 项目结构
+## 🧯 安全默认值
+
+项目默认坚持：
 
 ```text
-sing-box-oneclick/
-├── install.sh
-├── VERSION
-├── SHA256SUMS
-├── lib/
-│   ├── common.sh
-│   ├── ui.sh
-│   ├── protocols.sh
-│   ├── tuic.sh
-│   ├── extra-protocols.sh
-│   ├── editor.sh
-│   ├── client-export.sh
-│   ├── client-extra.sh
-│   ├── hy2-hop.sh
-│   ├── subscription.sh
-│   ├── subscription-hooks.sh
-│   ├── tls-manager.sh
-│   ├── tls-safe.sh
-│   ├── runtime.sh
-│   ├── security.sh
-│   ├── maintenance.sh
-│   ├── views.sh
-│   ├── views-extra.sh
-│   ├── usability.sh
-│   ├── firewall-v17.sh
-│   └── menu.sh
-├── tests/
-│   ├── validate-configs.sh
-│   ├── module-smoke.sh
-│   ├── editor-patch.sh
-│   ├── client-export.sh
-│   ├── extra-protocols.sh
-│   ├── subscription-config.sh
-│   ├── hardening.sh
-│   └── hy2-hop.sh
-└── .github/workflows/ci.yml
+✓ sing-box check 后再应用
+✓ 变更前备份
+✓ 配置失败不覆盖现有配置
+✓ 服务异常自动尝试回滚
+✓ 节点秘密默认打码
+✓ 更新锁定同一 Git commit
+✓ 整包 SHA256 校验
+✓ 不替换系统内核
+✓ 不自动 reboot
+✓ 不默认破坏 SSH 配置
+✓ 不提供“后台 watchdog 自动重启”
+```
+
+热加载 / 重启仍可能让现有连接短暂重连，因此项目不会宣传“绝对零中断”。
+
+---
+
+## ✅ CI 验证
+
+GitHub Actions 当前会验证：
+
+```text
+Bash 语法
+模块加载
+小白安全增强
+BBR 开 / 关 / 恢复
+sing-box 核心版本管理逻辑
+HTTPS 订阅 Nginx 配置
+管理器 SHA256 清单
+安装当前稳定版 sing-box
+7 种代表性服务端配置 sing-box check
+HY2 端口跳跃客户端导出
+AnyTLS / Trojan / Shadowsocks helpers
+原地参数编辑
+生成的 sing-box 客户端配置
+Mihomo / v2rayN 导出结构
+```
+
+CI 能降低脚本回归风险，但它不能代替真实 VPS 上的：
+
+```text
+云厂商 Security Group
+真实 Certbot 域名签发
+真实 Cloudflare 路由
+运营商 QoS / UDP 限制
+地区网络环境
 ```
 
 ---
 
-## ⚠️ 边界
+## 📁 主要目录
 
-- 支持 Debian / Ubuntu；
-- 云厂商安全组需要自行放行；
-- ACME HTTP-01 通常需要公网 `TCP/80`；
-- Cloudflare 普通橙云不代理 Reality / HY2 / TUIC / AnyTLS / 原生 Trojan；
-- 自签证书需要客户端允许跳过证书验证；
-- HY2 端口跳跃不是“加速器”，只针对特定的单端口 UDP QoS / 阻断；
-- 安装器 SHA256 清单提升整包一致性，但不等于独立的密码学代码签名。
+```text
+/etc/sing-box/config.json                    sing-box 服务端配置
+/etc/sing-box-oneclick/state.json            管理状态
+/etc/sing-box-oneclick/backups/              配置备份
+/etc/sing-box-oneclick/core-manager/         核心版本快照
+/etc/sing-box-oneclick/exports/              客户端导出
+/root/sing-box-node-info.txt                 节点信息文件
+/usr/local/lib/sing-box-oneclick             当前管理器链接
+/usr/local/lib/sing-box-oneclick-releases/   管理器版本目录
+/usr/local/bin/sb                            管理命令
+```
+
+敏感目录和文件使用严格权限；不要手动把这些文件复制到公开 Web 目录。
 
 ---
 
-<div align="center">
+## 🗺️ 后续方向
 
-**先简单部署，出问题跑 `sb doctor`；需要高级能力时再打开高级功能。**
+当前优先级已经从“继续堆协议”转向长期维护体验：
 
-如果这个项目对你有帮助，可以给仓库一个 ⭐。
+```text
+多节点 / 同协议多实例
+State Schema 版本化迁移
+更强的 config ↔ state 漂移修复
+更完整发行版测试矩阵
+高级无交互 CLI
+多用户凭据
+更新签名 / Release 校验进一步增强
+```
 
-</div>
+---
+
+## ⚠️ 使用提醒
+
+请遵守所在地法律法规和 VPS 服务商条款。
+
+这个项目优先追求：**配置清楚、变更安全、失败可恢复、长期维护省心。**
