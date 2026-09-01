@@ -26,7 +26,9 @@ C_DIM=''
 C_WHITE=''
 C_MAGENTA=''
 
-mkdir -p "$APP_DIR" "$SUBSCRIPTION_PUBLISH_DIR" "$SUBSCRIPTION_RUNTIME_DIR" "$CLIENT_EXPORT_DIR"
+# Deliberately do NOT pre-create SUBSCRIPTION_RUNTIME_DIR. A fresh VPS has no
+# /run/sing-box-oneclick-subscription before the dedicated service first starts.
+mkdir -p "$APP_DIR" "$SUBSCRIPTION_PUBLISH_DIR" "$CLIENT_EXPORT_DIR"
 printf '%s\n' '{"version":1,"nodes":{}}' > "$STATE_FILE"
 
 # shellcheck source=/dev/null
@@ -47,7 +49,9 @@ touch "${SUBSCRIPTION_PUBLISH_DIR}/v2rayn-subscription-base64.txt"
 
 token="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 write_subscription_nginx_config "sub.example.com" 9443 "$token" "$cert" "$key" "$SUBSCRIPTION_USER"
+[[ ! -d "$SUBSCRIPTION_RUNTIME_DIR" ]]
 validate_subscription_nginx_config
+[[ -d "$SUBSCRIPTION_RUNTIME_DIR" ]]
 
 grep -Fq 'ssl_protocols TLSv1.2 TLSv1.3;' "$SUBSCRIPTION_CONFIG"
 grep -Fq 'ssl_session_tickets off;' "$SUBSCRIPTION_CONFIG"
@@ -62,4 +66,4 @@ grep -Fq "location = /${token}/v2rayn" "$SUBSCRIPTION_CONFIG"
 grep -Fq 'location / {' "$SUBSCRIPTION_CONFIG"
 grep -Fq 'return 404;' "$SUBSCRIPTION_CONFIG"
 
-printf 'HTTPS subscription nginx configuration passed syntax and hardening checks.\n'
+printf 'HTTPS subscription nginx configuration passed fresh-runtime and hardening checks.\n'
