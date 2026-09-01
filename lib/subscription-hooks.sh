@@ -83,6 +83,51 @@ validate_subscription_nginx_config() {
   "$nginx_bin" -t -q -c "$SUBSCRIPTION_CONFIG"
 }
 
+subscription_listener_ready() {
+  local port=$1
+  ss -H -lnt "sport = :$port" 2>/dev/null | grep -q .
+}
+
+subscription_health_diagnostics() {
+  local port=$1
+  echo
+  warn "HTTPS 订阅服务没有在预期时间内就绪，下面是自动诊断信息："
+  echo
+  note "systemd 服务状态"
+  systemctl status "$SUBSCRIPTION_SERVICE" --no-pager -l 2>/dev/null | sed -n '1,20p' || true
+  echo
+  note "TCP/$port 监听状态"
+  ss -lntp "sport = :$port" 2>/dev/null || true
+  echo
+  note "最近订阅服务日志"
+  journalctl -u "$SUBSCRIPTION_SERVICE" -n 40 --no-pager 2>/dev/null || true
+}
+
+# Type=simple means systemd can report the service as started slightly before
+# Nginx has finished creating its listening socket. Do not fail the whole setup
+# on the first immediate curl. Wait briefly for both the service and the socket,
+# then verify the exact private subscription path over local HTTPS.
+subscription_local_healthcheck() {
+  local domain=$1 port=$2 token=$3 authority url attempt
+  authority=$(subscription_authority "$domain" "$port")
+  url="https://${authority}/${token}/mihomo"
+
+  for ((attempt=1; attempt<=20; attempt++)); do
+    if systemctl is-active --quiet "$SUBSCRIPTION_SERVICE" 2>/dev/null \
+      && subscription_listener_ready "$port" \
+      && curl -kfsS --max-time 3 --resolve "${domain}:${port}:127.0.0.1" "$url" >/dev/null 2>&1; then
+      if (( attempt > 1 )); then
+        note "HTTPS 订阅服务已就绪（启动等待 ${attempt} 次检查）。"
+      fi
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  subscription_health_diagnostics "$port"
+  return 1
+}
+
 # Override the generic UFW helper only for the active Cloudflare subscription
 # origin. This makes the origin port reachable from Cloudflare edges but not
 # directly from arbitrary Internet hosts. All other callers keep the original
