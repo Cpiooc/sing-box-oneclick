@@ -98,7 +98,20 @@ core_restore_after_failure() {
 }
 core_status() { :; }
 
+# Fresh install: there is no previous binary snapshot. The transaction must
+# still return success after the new core has been installed and verified.
+MOCK_CURRENT_VERSION=''
+LAST_INSTALL_TARGET=''
+RESTORE_COUNT=0
+core_install_version 1.13.19
+[[ "$MOCK_CURRENT_VERSION" == 1.13.19 ]]
+[[ "$LAST_INSTALL_TARGET" == 1.13.19 ]]
+[[ "$RESTORE_COUNT" == 0 ]]
+
 # Successful upgrade.
+MOCK_CURRENT_VERSION=1.13.18
+LAST_INSTALL_TARGET=''
+RESTORE_COUNT=0
 core_install_version 1.13.19
 [[ "$MOCK_CURRENT_VERSION" == 1.13.19 ]]
 [[ "$LAST_INSTALL_TARGET" == 1.13.19 ]]
