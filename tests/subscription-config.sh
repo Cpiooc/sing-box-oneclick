@@ -26,6 +26,10 @@ C_DIM=''
 C_WHITE=''
 C_MAGENTA=''
 
+# Minimal UI helpers used by the subscription readiness/diagnostic layer.
+note() { :; }
+warn() { :; }
+
 # Deliberately do NOT pre-create SUBSCRIPTION_RUNTIME_DIR. A fresh VPS has no
 # /run/sing-box-oneclick-subscription before the dedicated service first starts.
 mkdir -p "$APP_DIR" "$SUBSCRIPTION_PUBLISH_DIR" "$CLIENT_EXPORT_DIR"
@@ -66,4 +70,23 @@ grep -Fq "location = /${token}/v2rayn" "$SUBSCRIPTION_CONFIG"
 grep -Fq 'location / {' "$SUBSCRIPTION_CONFIG"
 grep -Fq 'return 404;' "$SUBSCRIPTION_CONFIG"
 
-printf 'HTTPS subscription nginx configuration passed fresh-runtime and hardening checks.\n'
+# Regression: Type=simple can report active before the first HTTPS request is
+# actually ready. The health check must retry instead of failing on one curl.
+health_curl_attempts=0
+systemctl() {
+  [[ ${1:-} == is-active ]] && return 0
+  return 0
+}
+ss() {
+  printf '%s\n' 'LISTEN 0 511 0.0.0.0:9443 0.0.0.0:*'
+}
+curl() {
+  health_curl_attempts=$((health_curl_attempts + 1))
+  (( health_curl_attempts >= 3 ))
+}
+sleep() { :; }
+
+subscription_local_healthcheck "sub.example.com" 9443 "$token"
+[[ "$health_curl_attempts" -eq 3 ]]
+
+printf 'HTTPS subscription nginx configuration and delayed-readiness checks passed.\n'
