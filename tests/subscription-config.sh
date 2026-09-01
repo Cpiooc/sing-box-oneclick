@@ -70,23 +70,54 @@ grep -Fq "location = /${token}/v2rayn" "$SUBSCRIPTION_CONFIG"
 grep -Fq 'location / {' "$SUBSCRIPTION_CONFIG"
 grep -Fq 'return 404;' "$SUBSCRIPTION_CONFIG"
 
-# Regression: Type=simple can report active before the first HTTPS request is
-# actually ready. The health check must retry instead of failing on one curl.
 health_curl_attempts=0
+health_restart_attempts=0
+health_mode="transient"
 systemctl() {
-  [[ ${1:-} == is-active ]] && return 0
-  return 0
+  case "${1:-}" in
+    is-active) return 0 ;;
+    restart)
+      health_restart_attempts=$((health_restart_attempts + 1))
+      return 0
+      ;;
+    *) return 0 ;;
+  esac
 }
 ss() {
-  printf '%s\n' 'LISTEN 0 511 0.0.0.0:9443 0.0.0.0:*'
+  case "$*" in
+    *":9443"*|*":9555"*) printf '%s\n' 'LISTEN 0 511 0.0.0.0:9443 0.0.0.0:*' ;;
+  esac
 }
 curl() {
   health_curl_attempts=$((health_curl_attempts + 1))
-  (( health_curl_attempts >= 3 ))
+  case "$health_mode" in
+    transient) (( health_curl_attempts >= 3 )) ;;
+    stale) (( health_restart_attempts >= 1 )) ;;
+    *) return 1 ;;
+  esac
 }
 sleep() { :; }
 
+# Regression: a previous failed setup may leave the script-owned Nginx active
+# on 9443 while state still says enabled=false. Retrying must be allowed.
+[[ "$(subscription_managed_listener_port)" == 9443 ]]
+subscription_port_is_available 9443
+# But an unrelated occupied port must still be rejected.
+! subscription_port_is_available 9555
+
+# Normal Type=simple startup: two transient HTTPS failures should recover
+# without an unnecessary service restart.
 subscription_local_healthcheck "sub.example.com" 9443 "$token"
 [[ "$health_curl_attempts" -eq 3 ]]
+[[ "$health_restart_attempts" -eq 0 ]]
 
-printf 'HTTPS subscription nginx configuration and delayed-readiness checks passed.\n'
+# Reconfiguration recovery: an already-active Nginx can still serve the old
+# Token. After three ready-but-failing checks, restart it once and retry.
+health_curl_attempts=0
+health_restart_attempts=0
+health_mode="stale"
+subscription_local_healthcheck "sub.example.com" 9443 "$token"
+[[ "$health_curl_attempts" -eq 4 ]]
+[[ "$health_restart_attempts" -eq 1 ]]
+
+printf 'HTTPS subscription fresh-runtime, readiness and reconfigure recovery checks passed.\n'
