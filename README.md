@@ -7,7 +7,7 @@
 安全 · 简单 · 可回滚 · 默认隐藏秘密
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-v1.8.2-2563eb?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-v1.8.3-2563eb?style=flat-square">
   <img alt="CI" src="https://github.com/Cpiooc/sing-box-oneclick/actions/workflows/ci.yml/badge.svg">
 </p>
 
