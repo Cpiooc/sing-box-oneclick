@@ -81,6 +81,7 @@ required=(
   subscription_menu enable_https_subscription show_https_subscription_status
   show_subscription_urls rotate_subscription_token refresh_https_subscription disable_https_subscription
   write_subscription_nginx_config publish_subscription_payloads subscription_enabled
+  subscription_listener_ready subscription_health_diagnostics subscription_local_healthcheck
   apply_candidate apply_runtime_change singbox_can_reload
   show_status show_nodes reveal_nodes show_qr_codes show_logs network_diagnostics
   enable_bbr disable_bbr bbr_status bbr_menu bbr_cli certificate_status security_audit doctor
@@ -113,6 +114,7 @@ done
 [[ "$(type -t hy2_port_hopping_menu)" == "function" ]]
 [[ "$(type -t manager_check_update)" == "function" ]]
 [[ "$(type -t cert_pinning_migrate_all)" == "function" ]]
+[[ "$(type -t subscription_local_healthcheck)" == "function" ]]
 
 rm -rf "$APP_DIR"
-echo "All v1.8.3 modules loaded and required functions are present."
+echo "All v1.8.4 modules loaded and required functions are present."
