@@ -83,6 +83,44 @@ validate_subscription_nginx_config() {
   "$nginx_bin" -t -q -c "$SUBSCRIPTION_CONFIG"
 }
 
+subscription_managed_listener_port() {
+  [[ -r "$SUBSCRIPTION_CONFIG" ]] || return 1
+  awk '
+    /^[[:space:]]*listen[[:space:]]+[0-9]+[[:space:]]+ssl;/ {
+      port=$2
+      gsub(/;/, "", port)
+      print port
+      exit
+    }
+  ' "$SUBSCRIPTION_CONFIG"
+}
+
+# A failed first setup can leave the dedicated Nginx service alive while state
+# still says subscription.enabled=false. Treat that script-owned listener as
+# reusable on the next attempt, but never steal a port from an unrelated service.
+subscription_port_is_available() {
+  local port=$1 current_port current_enabled managed_port=""
+  current_port=$(jq -r '.subscription.port // empty' "$STATE_FILE" 2>/dev/null || true)
+  current_enabled=$(jq -r '.subscription.enabled // false' "$STATE_FILE" 2>/dev/null || true)
+
+  if [[ "$current_enabled" == true && "$current_port" == "$port" ]]; then
+    return 0
+  fi
+
+  if ! ss -H -lnt "sport = :$port" 2>/dev/null | grep -q .; then
+    return 0
+  fi
+
+  managed_port=$(subscription_managed_listener_port 2>/dev/null || true)
+  if [[ "$managed_port" == "$port" ]] \
+    && systemctl is-active --quiet "$SUBSCRIPTION_SERVICE" 2>/dev/null; then
+    note "TCP/$port 当前由本脚本的 HTTPS 订阅服务占用，将安全复用并加载新配置。"
+    return 0
+  fi
+
+  return 1
+}
+
 subscription_listener_ready() {
   local port=$1
   ss -H -lnt "sport = :$port" 2>/dev/null | grep -q .
@@ -105,21 +143,30 @@ subscription_health_diagnostics() {
 
 # Type=simple means systemd can report the service as started slightly before
 # Nginx has finished creating its listening socket. Do not fail the whole setup
-# on the first immediate curl. Wait briefly for both the service and the socket,
-# then verify the exact private subscription path over local HTTPS.
+# on the first immediate curl. Also handle reconfiguration: an already-active
+# Nginx process may still serve the previous Token until it is restarted.
 subscription_local_healthcheck() {
-  local domain=$1 port=$2 token=$3 authority url attempt
+  local domain=$1 port=$2 token=$3 authority url attempt ready_failures=0 restarted=false
   authority=$(subscription_authority "$domain" "$port")
   url="https://${authority}/${token}/mihomo"
 
   for ((attempt=1; attempt<=20; attempt++)); do
     if systemctl is-active --quiet "$SUBSCRIPTION_SERVICE" 2>/dev/null \
-      && subscription_listener_ready "$port" \
-      && curl -kfsS --max-time 3 --resolve "${domain}:${port}:127.0.0.1" "$url" >/dev/null 2>&1; then
-      if (( attempt > 1 )); then
-        note "HTTPS 订阅服务已就绪（启动等待 ${attempt} 次检查）。"
+      && subscription_listener_ready "$port"; then
+      if curl -kfsS --max-time 3 --resolve "${domain}:${port}:127.0.0.1" "$url" >/dev/null 2>&1; then
+        if (( attempt > 1 )); then
+          note "HTTPS 订阅服务已就绪（启动等待 ${attempt} 次检查）。"
+        fi
+        return 0
       fi
-      return 0
+
+      ready_failures=$((ready_failures + 1))
+      if (( ready_failures >= 3 )) && [[ "$restarted" == false ]]; then
+        note "订阅端口已监听，但最新订阅路径尚未生效；自动重启一次专用 Nginx 加载新配置。"
+        systemctl restart "$SUBSCRIPTION_SERVICE" >/dev/null 2>&1 || true
+        restarted=true
+        ready_failures=0
+      fi
     fi
     sleep 0.25
   done
