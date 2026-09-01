@@ -26,6 +26,10 @@ C_DIM=''
 C_WHITE=''
 C_MAGENTA=''
 
+# Minimal UI helpers used by the subscription readiness/diagnostic layer.
+note() { :; }
+warn() { :; }
+
 # Deliberately do NOT pre-create SUBSCRIPTION_RUNTIME_DIR. A fresh VPS has no
 # /run/sing-box-oneclick-subscription before the dedicated service first starts.
 mkdir -p "$APP_DIR" "$SUBSCRIPTION_PUBLISH_DIR" "$CLIENT_EXPORT_DIR"
