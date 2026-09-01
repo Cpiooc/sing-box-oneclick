@@ -115,4 +115,4 @@ done
 [[ "$(type -t cert_pinning_migrate_all)" == "function" ]]
 
 rm -rf "$APP_DIR"
-echo "All v1.8.2 modules loaded and required functions are present."
+echo "All v1.8.3 modules loaded and required functions are present."
