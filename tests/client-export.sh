@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 for cmd in sing-box jq openssl base64; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "missing dependency: $cmd" >&2; exit 1; }
@@ -44,6 +44,10 @@ source "$root/lib/extra-protocols.sh"
 source "$root/lib/client-export.sh"
 # shellcheck source=/dev/null
 source "$root/lib/client-extra.sh"
+# shellcheck source=/dev/null
+source "$root/lib/subscription.sh"
+# shellcheck source=/dev/null
+source "$root/lib/subscription-hooks.sh"
 
 mkdir -p "$APP_DIR" "$CONFIG_DIR" "$BACKUP_DIR"
 
@@ -130,4 +134,22 @@ for f in sing-box-client.json mihomo.yaml v2rayn-subscription.txt v2rayn-subscri
 done
 [[ $(stat -c '%a' "$exports") == 700 ]]
 
-echo "Client export files generated and validated successfully."
+# Regression: most real servers only install a subset of protocols. Missing
+# protocol keys are normal and must not make managed_export_keys return 1 or
+# trigger the inherited ERR trap from a process-substitution subshell.
+cp "$STATE_FILE" "$work/full-state.json"
+jq '{version:.version,nodes:{reality:.nodes.reality}}' "$work/full-state.json" > "$STATE_FILE"
+chmod 600 "$STATE_FILE"
+sparse_err="$work/sparse-export.err"
+generate_all_client_exports >/dev/null 2>"$sparse_err"
+if grep -Fq '脚本在第' "$sparse_err"; then
+  echo 'sparse export emitted a false ERR-trap message' >&2
+  cat "$sparse_err" >&2
+  exit 1
+fi
+[[ $(wc -l < "$exports/v2rayn-subscription.txt") -eq 1 ]]
+grep -q '^vless://' "$exports/v2rayn-subscription.txt"
+
+mv "$work/full-state.json" "$STATE_FILE"
+
+echo "Client export files generated and validated successfully, including sparse-node exports."
