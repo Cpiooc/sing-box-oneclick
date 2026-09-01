@@ -5,6 +5,20 @@
 # local exports, published payloads, and the HTTPS service synchronized while
 # applying defense-in-depth rules without complicating the core modules.
 
+# A missing protocol is normal. Always return success after enumerating the
+# nodes that actually exist, otherwise an ERR trap inside process substitution
+# can turn a sparse node set into a false script error.
+managed_export_keys() {
+  ensure_state
+  local key
+  for key in reality hy2 tuic ws anytls trojan ss; do
+    if jq -e --arg k "$key" '.nodes[$k] != null' "$STATE_FILE" >/dev/null 2>&1; then
+      printf '%s\n' "$key"
+    fi
+  done
+  return 0
+}
+
 purge_client_export_payloads() {
   rm -f "${CLIENT_EXPORT_DIR}/sing-box-client.json" \
         "${CLIENT_EXPORT_DIR}/mihomo.yaml" \
@@ -59,6 +73,13 @@ validate_subscription_nginx_config() {
   harden_subscription_nginx_config || return 1
   nginx_bin=$(subscription_nginx_bin)
   [[ -n "$nginx_bin" ]] || die "未找到 nginx。"
+
+  # systemd creates RuntimeDirectory before ExecStartPre, but the installer
+  # performs an nginx -t before the service has ever started. A fresh VPS has
+  # no /run/sing-box-oneclick-subscription yet, so create only the parent
+  # directory needed for the manual validation. systemd still owns its normal
+  # lifecycle after the service starts and after reboot.
+  install -d -m 0755 "$SUBSCRIPTION_RUNTIME_DIR" || return 1
   "$nginx_bin" -t -q -c "$SUBSCRIPTION_CONFIG"
 }
 
