@@ -312,7 +312,10 @@ core_install_version() {
   fi
 
   info "sing-box 已安全切换到 $target。"
-  [[ -n "$snapshot" ]] && note "上一版本 $current 已保留，可用 sb core rollback 回退。"
+  if [[ -n "$snapshot" ]]; then
+    note "上一版本 $current 已保留，可用 sb core rollback 回退。"
+  fi
+  return 0
 }
 
 core_update_latest() {
